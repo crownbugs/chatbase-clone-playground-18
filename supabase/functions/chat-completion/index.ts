@@ -47,6 +47,19 @@ serve(async (req) => {
       throw new Error('Agent not found or inactive');
     }
 
+    // 🔑 Get the user's OpenAI API key from profiles using agent.user_id
+    const { data: userProfile, error: profileError } = await supabaseClient
+      .from('profiles')
+      .select('openai_api_key')
+      .eq('id', agent.user_id)
+      .single();
+
+    if (profileError || !userProfile?.openai_api_key) {
+      throw new Error('User OpenAI API key not configured');
+    }
+
+    const openaiApiKey = userProfile.openai_api_key;
+
     // Get or create conversation
     let currentConversationId = conversationId;
     if (!currentConversationId) {
@@ -83,13 +96,12 @@ serve(async (req) => {
 
     let context = '';
     if (knowledgeBases && knowledgeBases.length > 0) {
-      // Simple content matching for now (can be enhanced with vector search)
       const relevantContent = knowledgeBases
         .filter(kb => kb.content && kb.content.toLowerCase().includes(message.toLowerCase()))
         .map(kb => kb.content)
         .slice(0, 3)
         .join('\n\n');
-      
+
       if (relevantContent) {
         context = `\n\nRelevant information from knowledge base:\n${relevantContent}`;
       }
@@ -116,18 +128,12 @@ serve(async (req) => {
         role: 'system',
         content: `${agent.instructions || 'You are a helpful AI assistant.'}${context}`
       },
-      ...conversationHistory.slice(0, -1), // Exclude the last message (current user message)
+      ...conversationHistory.slice(0, -1),
       {
         role: 'user',
         content: message
       }
     ];
-
-    // Get OpenAI API key
-    const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
-    if (!openaiApiKey) {
-      throw new Error('OpenAI API key not configured');
-    }
 
     // Call OpenAI API
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
