@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import Navbar from "./Navbar";
 import MainDashboard from "./MainDashboard";
 import AgentsManager from "./AgentsManager";
@@ -13,6 +14,7 @@ import { Loader2 } from "lucide-react";
 const AppLayout = () => {
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [showChatWidget, setShowChatWidget] = useState(false);
+  const [activeAgent, setActiveAgent] = useState<string | null>(null);
   const { user, loading } = useAuth();
   const navigate = useNavigate();
 
@@ -21,6 +23,31 @@ const AppLayout = () => {
       navigate('/auth');
     }
   }, [user, loading, navigate]);
+
+  // Load the first active agent for the chat widget
+  useEffect(() => {
+    if (user) {
+      loadActiveAgent();
+    }
+  }, [user]);
+
+  const loadActiveAgent = async () => {
+    try {
+      const { data } = await supabase
+        .from('agents')
+        .select('id')
+        .eq('user_id', user?.id)
+        .eq('is_active', true)
+        .limit(1)
+        .single();
+      
+      if (data) {
+        setActiveAgent(data.id);
+      }
+    } catch (error) {
+      console.log('No active agents found');
+    }
+  };
 
   const handleNavigate = (page: string) => {
     setCurrentPage(page);
@@ -70,12 +97,14 @@ const AppLayout = () => {
         {renderCurrentPage()}
       </main>
 
-      {/* Demo Chat Widget */}
-      <ChatWidget
-        isOpen={showChatWidget}
-        onToggle={toggleChatWidget}
-        agentId="demo"
-      />
+      {/* Chat Widget - Only show if user has active agents */}
+      {activeAgent && (
+        <ChatWidget
+          isOpen={showChatWidget}
+          onToggle={toggleChatWidget}
+          agentId={activeAgent}
+        />
+      )}
     </div>
   );
 };
