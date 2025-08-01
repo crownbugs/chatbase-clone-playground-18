@@ -20,7 +20,6 @@ const Navbar = ({ onNavigate, currentPage }: NavbarProps) => {
 
   const navigation = [
     { name: 'Dashboard', id: 'dashboard' },
-    { name: 'Workflow Builder', id: 'workflow' },
     { name: 'My Agents', id: 'agents' },
     { name: 'Analytics', id: 'analytics' },
     { name: 'Integrations', id: 'integrations' },
@@ -33,8 +32,10 @@ const Navbar = ({ onNavigate, currentPage }: NavbarProps) => {
           {/* Logo */}
           <div className="flex items-center">
             <div className="flex items-center gap-2">
-              <img src="/favicon.svg" alt="Rebur Logo" className="w-8 h-8" />
-              <span className="text-xl font-bold">Rebur</span>
+              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                <MessageSquare className="w-4 h-4 text-primary-foreground" />
+              </div>
+              <span className="text-xl font-bold">ChatBase</span>
             </div>
           </div>
 

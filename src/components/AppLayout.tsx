@@ -4,7 +4,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "./Navbar";
 import MainDashboard from "./MainDashboard";
-import WorkflowBuilder from "./WorkflowBuilder";
 import AgentsManager from "./AgentsManager";
 import AnalyticsDashboard from "./AnalyticsDashboard";
 import IntegrationHub from "./IntegrationHub";
@@ -77,8 +76,6 @@ const AppLayout = () => {
     switch (currentPage) {
       case 'dashboard':
         return <MainDashboard onNavigate={handleNavigate} />;
-      case 'workflow':
-        return <WorkflowBuilder />;
       case 'agents':
         return <AgentsManager />;
       case 'analytics':

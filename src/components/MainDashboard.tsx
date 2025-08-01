@@ -131,14 +131,14 @@ const MainDashboard = ({ onNavigate }: MainDashboardProps) => {
       {/* Welcome Section */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Welcome to Rebur</h1>
+          <h1 className="text-3xl font-bold">Welcome back!</h1>
           <p className="text-muted-foreground">
             Here's what's happening with your AI agents today.
           </p>
         </div>
-        <Button onClick={() => onNavigate('workflow')} className="w-fit">
+        <Button onClick={() => onNavigate('agents')} className="w-fit">
           <Plus className="w-4 h-4 mr-2" />
-          Open Workflow Builder
+          Create New Agent
         </Button>
       </div>
 
@@ -239,9 +239,9 @@ const MainDashboard = ({ onNavigate }: MainDashboardProps) => {
                 <p className="text-sm text-muted-foreground mb-4">
                   Create your first AI agent to get started
                 </p>
-                <Button onClick={() => onNavigate('workflow')}>
+                <Button onClick={() => onNavigate('agents')}>
                   <Plus className="w-4 h-4 mr-2" />
-                  Open Workflow Builder
+                  Create Agent
                 </Button>
               </div>
             ) : (
@@ -281,10 +281,10 @@ const MainDashboard = ({ onNavigate }: MainDashboardProps) => {
             <Button 
               variant="outline" 
               className="w-full justify-start"
-              onClick={() => onNavigate('workflow')}
+              onClick={() => onNavigate('agents')}
             >
               <Plus className="w-4 h-4 mr-2" />
-              Open Workflow Builder
+              Create New Agent
             </Button>
             
             <Button 
