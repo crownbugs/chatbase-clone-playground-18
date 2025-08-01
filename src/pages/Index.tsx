@@ -43,7 +43,7 @@ const Index = () => {
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                 <MessageSquare className="w-4 h-4 text-primary-foreground" />
               </div>
-              <span className="text-xl font-bold">Rebur</span>
+              <span className="text-xl font-bold">ChatBase Clone</span>
             </div>
             
             <div className="flex items-center gap-4">
