@@ -32,10 +32,8 @@ const Navbar = ({ onNavigate, currentPage }: NavbarProps) => {
           {/* Logo */}
           <div className="flex items-center">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <MessageSquare className="w-4 h-4 text-primary-foreground" />
-              </div>
-              <span className="text-xl font-bold">ChatBase</span>
+              <img src="/favicon.svg" alt="Rebur" className="w-8 h-8" />
+              <span className="text-xl font-bold">Rebur</span>
             </div>
           </div>
 
