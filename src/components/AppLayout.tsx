@@ -60,6 +60,10 @@ const AppLayout = () => {
     setCurrentPage(page);
   };
 
+  const handleBackToDashboard = () => {
+    setCurrentPage('dashboard');
+  };
+
   const toggleChatWidget = () => {
     setShowChatWidget(!showChatWidget);
   };
@@ -102,7 +106,7 @@ const AppLayout = () => {
   // Render workflow page in a completely separate structure to avoid hook conflicts
   const workflowContent = (
     <div className="min-h-screen bg-background">
-      <WorkflowBuilder />
+      <WorkflowBuilder onBackToDashboard={handleBackToDashboard} />
       {activeAgent && (
         <ChatWidget
           isOpen={showChatWidget}

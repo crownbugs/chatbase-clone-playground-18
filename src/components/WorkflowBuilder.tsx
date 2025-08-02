@@ -13,7 +13,7 @@ import {
   Settings, MessageSquare, ArrowRight, 
   CheckCircle, Loader2, X, Plus,
   Eye, Play, Download, Code,
-  Link, Trash2, RefreshCw
+  Link, Trash2, RefreshCw, ArrowLeft
 } from "lucide-react";
 import {
   Sidebar,
@@ -50,7 +50,11 @@ interface AgentData {
   };
 }
 
-const WorkflowBuilder = () => {
+interface WorkflowBuilderProps {
+  onBackToDashboard?: () => void;
+}
+
+const WorkflowBuilder = ({ onBackToDashboard }: WorkflowBuilderProps) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [crawlLoading, setCrawlLoading] = useState(false);
@@ -86,22 +90,46 @@ const WorkflowBuilder = () => {
   const crawlWebsite = async (url: string) => {
     setCrawlLoading(true);
     try {
+      // Call Supabase Edge Function that uses Firecrawl
       const response = await supabase.functions.invoke('scrape-website', {
-        body: { url, discoverLinks: true }
+        body: { 
+          url: url,
+          knowledgeBaseId: 'temp-' + Date.now() // Temporary ID for crawling
+        }
       });
 
-      if (response.data?.links) {
+      if (response.data?.links && response.data.links.length > 0) {
         setDiscoveredUrls(response.data.links);
         setSelectedUrls(response.data.links.slice(0, 10)); // Pre-select first 10
         toast({
           title: "Website crawled successfully",
           description: `Found ${response.data.links.length} pages to index`,
         });
+      } else if (response.data?.content) {
+        // Single page scraped
+        const newSource: KnowledgeSource = {
+          id: Date.now().toString(),
+          type: 'url',
+          name: url,
+          content: url,
+          status: 'completed'
+        };
+        setAgentData(prev => ({
+          ...prev,
+          knowledgeSources: [...prev.knowledgeSources, newSource]
+        }));
+        toast({
+          title: "Page scraped successfully",
+          description: "Content has been added to your knowledge base",
+        });
+      } else {
+        throw new Error('No content found or crawling failed');
       }
     } catch (error) {
+      console.error('Crawl error:', error);
       toast({
         title: "Crawl failed",
-        description: "Could not crawl the website. Please check the URL.",
+        description: "Could not crawl the website. Please check the URL and ensure your Firecrawl API key is configured in Supabase secrets.",
         variant: "destructive",
       });
     } finally {
@@ -194,16 +222,44 @@ const WorkflowBuilder = () => {
 
     const newMessage = { role: 'user', content: testInput };
     setTestMessages(prev => [...prev, newMessage]);
+    const currentInput = testInput;
     setTestInput('');
 
-    // Simulate AI response
-    setTimeout(() => {
-      const response = { 
+    try {
+      // Create a temporary agent for testing
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      // Call the actual chat completion function
+      const response = await supabase.functions.invoke('chat-completion', {
+        body: {
+          agent: {
+            name: agentData.name,
+            instructions: agentData.instructions,
+            knowledgeSources: agentData.knowledgeSources
+          },
+          message: currentInput,
+          conversationId: null
+        }
+      });
+
+      if (response.data?.message) {
+        const assistantMessage = { 
+          role: 'assistant', 
+          content: response.data.message
+        };
+        setTestMessages(prev => [...prev, assistantMessage]);
+      } else {
+        throw new Error('No response from agent');
+      }
+    } catch (error) {
+      console.error('Test agent error:', error);
+      const errorMessage = { 
         role: 'assistant', 
-        content: `Based on the knowledge you've provided, I can help with: ${testInput}. This is a test response showing how your agent will interact with users.`
+        content: 'Sorry, I encountered an error while processing your request. Please make sure your knowledge base is properly configured.'
       };
-      setTestMessages(prev => [...prev, response]);
-    }, 1000);
+      setTestMessages(prev => [...prev, errorMessage]);
+    }
   };
 
   const deployAgent = async () => {
@@ -269,8 +325,18 @@ const WorkflowBuilder = () => {
   const WorkflowSidebar = () => (
     <Sidebar className="w-64 border-r">
       <SidebarContent>
+        <div className="p-4 border-b">
+          <Button 
+            variant="ghost" 
+            onClick={onBackToDashboard || (() => window.history.back())}
+            className="w-full justify-start"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Dashboard
+          </Button>
+        </div>
         <SidebarGroup>
-          <SidebarGroupLabel>Workflow Steps</SidebarGroupLabel>
+          <SidebarGroupLabel>Agent Builder</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {steps.map((step) => (
@@ -340,155 +406,188 @@ const WorkflowBuilder = () => {
               <p className="text-muted-foreground">Add content to train your AI agent</p>
             </div>
 
-            {/* URL Crawling */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Globe className="h-5 w-5" />
-                  Website Crawling
-                </CardTitle>
-                <CardDescription>
-                  Enter a website URL to automatically discover and crawl all pages
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex gap-2">
-                  <Input
-                    value={urlInput}
-                    onChange={(e) => setUrlInput(e.target.value)}
-                    placeholder="https://example.com"
-                    className="flex-1"
-                  />
-                  <Button 
-                    onClick={() => crawlWebsite(urlInput)}
-                    disabled={crawlLoading || !urlInput.trim()}
-                  >
-                    {crawlLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Crawl'}
-                  </Button>
-                </div>
-
-                {discoveredUrls.length > 0 && (
-                  <div className="space-y-3">
-                    <p className="text-sm font-medium">
-                      Found {discoveredUrls.length} pages. Select which ones to include:
-                    </p>
-                    <div className="max-h-40 overflow-y-auto space-y-2 border rounded p-3">
-                      {discoveredUrls.map((url, index) => (
-                        <label key={index} className="flex items-center space-x-2 text-sm">
-                          <input
-                            type="checkbox"
-                            checked={selectedUrls.includes(url)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setSelectedUrls(prev => [...prev, url]);
-                              } else {
-                                setSelectedUrls(prev => prev.filter(u => u !== url));
-                              }
-                            }}
-                            className="rounded"
-                          />
-                          <span className="truncate">{url}</span>
-                        </label>
-                      ))}
-                    </div>
-                    <Button onClick={addSelectedUrls} disabled={selectedUrls.length === 0}>
-                      Add {selectedUrls.length} Selected Pages
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* URL Crawling */}
+              <Card className="h-fit">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Globe className="h-5 w-5" />
+                    Website Crawling
+                  </CardTitle>
+                  <CardDescription className="text-sm">
+                    Crawl entire websites automatically
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex gap-2">
+                    <Input
+                      value={urlInput}
+                      onChange={(e) => setUrlInput(e.target.value)}
+                      placeholder="https://example.com"
+                      className="flex-1"
+                    />
+                    <Button 
+                      onClick={() => crawlWebsite(urlInput)}
+                      disabled={crawlLoading || !urlInput.trim()}
+                      size="sm"
+                    >
+                      {crawlLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Crawl'}
                     </Button>
                   </div>
-                )}
 
-                <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    onClick={addUrlSource}
-                    disabled={!urlInput.trim()}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Single URL
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                  {discoveredUrls.length > 0 && (
+                    <div className="space-y-3">
+                      <p className="text-sm font-medium">
+                        Found {discoveredUrls.length} pages:
+                      </p>
+                      <div className="max-h-32 overflow-y-auto space-y-1 border rounded p-2 bg-muted/30">
+                        {discoveredUrls.map((url, index) => (
+                          <label key={index} className="flex items-center space-x-2 text-xs">
+                            <input
+                              type="checkbox"
+                              checked={selectedUrls.includes(url)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedUrls(prev => [...prev, url]);
+                                } else {
+                                  setSelectedUrls(prev => prev.filter(u => u !== url));
+                                }
+                              }}
+                              className="rounded"
+                            />
+                            <span className="truncate">{url}</span>
+                          </label>
+                        ))}
+                      </div>
+                      <Button 
+                        onClick={addSelectedUrls} 
+                        disabled={selectedUrls.length === 0}
+                        size="sm"
+                        className="w-full"
+                      >
+                        Add {selectedUrls.length} Selected
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
 
-            {/* File Upload */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Upload className="h-5 w-5" />
-                  File Upload
-                </CardTitle>
-                <CardDescription>
-                  Upload documents (PDF, TXT, DOC, DOCX, JSON)
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="border-2 border-dashed border-muted rounded-lg p-8 text-center">
-                  <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
-                  <p className="text-muted-foreground mb-2">
-                    Drag and drop files here, or click to browse
-                  </p>
-                  <input
-                    type="file"
-                    multiple
-                    onChange={handleFileUpload}
-                    className="hidden"
-                    id="file-upload"
-                    accept=".pdf,.txt,.doc,.docx,.json,.html,.htm"
+              {/* Manual URL */}
+              <Card className="h-fit">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Link className="h-5 w-5" />
+                    Single URL
+                  </CardTitle>
+                  <CardDescription className="text-sm">
+                    Add individual web pages
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex gap-2">
+                    <Input
+                      value={urlInput}
+                      onChange={(e) => setUrlInput(e.target.value)}
+                      placeholder="https://page.com"
+                      className="flex-1"
+                    />
+                    <Button 
+                      onClick={addUrlSource}
+                      disabled={!urlInput.trim()}
+                      size="sm"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* File Upload */}
+              <Card className="h-fit">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Upload className="h-5 w-5" />
+                    File Upload
+                  </CardTitle>
+                  <CardDescription className="text-sm">
+                    PDF, TXT, DOC, DOCX, JSON
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="border-2 border-dashed border-muted rounded-lg p-6 text-center">
+                    <Upload className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Drop files or click to browse
+                    </p>
+                    <input
+                      type="file"
+                      multiple
+                      onChange={handleFileUpload}
+                      className="hidden"
+                      id="file-upload"
+                      accept=".pdf,.txt,.doc,.docx,.json,.html,.htm"
+                    />
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => document.getElementById('file-upload')?.click()}
+                    >
+                      Choose Files
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Text Input */}
+              <Card className="h-fit">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <FileText className="h-5 w-5" />
+                    Text Content
+                  </CardTitle>
+                  <CardDescription className="text-sm">
+                    Paste content directly
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <Textarea
+                    value={textInput}
+                    onChange={(e) => setTextInput(e.target.value)}
+                    placeholder="Paste your content here..."
+                    rows={4}
+                    className="text-sm"
                   />
                   <Button 
-                    variant="outline" 
-                    onClick={() => document.getElementById('file-upload')?.click()}
+                    onClick={addTextSource}
+                    disabled={!textInput.trim()}
+                    size="sm"
+                    className="w-full"
                   >
-                    Choose Files
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Content
                   </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Text Input */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  Direct Text Input
-                </CardTitle>
-                <CardDescription>
-                  Paste or type content directly
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Textarea
-                  value={textInput}
-                  onChange={(e) => setTextInput(e.target.value)}
-                  placeholder="Paste your content here..."
-                  rows={6}
-                />
-                <Button 
-                  onClick={addTextSource}
-                  disabled={!textInput.trim()}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Text Content
-                </Button>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
 
             {/* Knowledge Sources List */}
             {agentData.knowledgeSources.length > 0 && (
               <Card>
-                <CardHeader>
-                  <CardTitle>Knowledge Sources ({agentData.knowledgeSources.length})</CardTitle>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg">Added Sources ({agentData.knowledgeSources.length})</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-2">
+                  <div className="space-y-2 max-h-60 overflow-y-auto">
                     {agentData.knowledgeSources.map((source) => (
-                      <div key={source.id} className="flex items-center justify-between p-3 border rounded">
-                        <div className="flex items-center space-x-3">
-                          {source.type === 'url' && <Link className="h-4 w-4 text-blue-500" />}
-                          {source.type === 'file' && <FileText className="h-4 w-4 text-green-500" />}
-                          {source.type === 'text' && <FileText className="h-4 w-4 text-purple-500" />}
-                          <div>
-                            <p className="text-sm font-medium truncate max-w-md">{source.name}</p>
+                      <div key={source.id} className="flex items-center justify-between p-2 border rounded hover:bg-muted/30 transition-colors">
+                        <div className="flex items-center space-x-2 min-w-0 flex-1">
+                          {source.type === 'url' && <Link className="h-3 w-3 text-blue-500 flex-shrink-0" />}
+                          {source.type === 'file' && <FileText className="h-3 w-3 text-green-500 flex-shrink-0" />}
+                          {source.type === 'text' && <FileText className="h-3 w-3 text-purple-500 flex-shrink-0" />}
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-medium truncate">{source.name}</p>
                             {source.size && (
                               <p className="text-xs text-muted-foreground">
                                 {(source.size / 1024).toFixed(1)} KB
@@ -496,20 +595,24 @@ const WorkflowBuilder = () => {
                             )}
                           </div>
                         </div>
-                        <div className="flex items-center space-x-2">
-                          <Badge variant={
-                            source.status === 'completed' ? 'default' :
-                            source.status === 'processing' ? 'secondary' :
-                            source.status === 'failed' ? 'destructive' : 'outline'
-                          }>
+                        <div className="flex items-center space-x-2 flex-shrink-0">
+                          <Badge 
+                            variant={
+                              source.status === 'completed' ? 'default' :
+                              source.status === 'processing' ? 'secondary' :
+                              source.status === 'failed' ? 'destructive' : 'outline'
+                            }
+                            className="text-xs"
+                          >
                             {source.status}
                           </Badge>
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => removeSource(source.id)}
+                            className="h-6 w-6 p-0"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <X className="h-3 w-3" />
                           </Button>
                         </div>
                       </div>
