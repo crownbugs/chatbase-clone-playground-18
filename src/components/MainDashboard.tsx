@@ -136,10 +136,10 @@ const MainDashboard = ({ onNavigate }: MainDashboardProps) => {
             Here's what's happening with your AI agents today.
           </p>
         </div>
-            <Button onClick={() => onNavigate('workflow')} className="w-fit">
-              <Plus className="w-4 h-4 mr-2" />
-              Create New Agent
-            </Button>
+        <Button onClick={() => onNavigate('agents')} className="w-fit">
+          <Plus className="w-4 h-4 mr-2" />
+          Create New Agent
+        </Button>
       </div>
 
       {/* Stats Grid */}
@@ -239,7 +239,7 @@ const MainDashboard = ({ onNavigate }: MainDashboardProps) => {
                 <p className="text-sm text-muted-foreground mb-4">
                   Create your first AI agent to get started
                 </p>
-                <Button onClick={() => onNavigate('workflow')}>
+                <Button onClick={() => onNavigate('agents')}>
                   <Plus className="w-4 h-4 mr-2" />
                   Create Agent
                 </Button>
@@ -281,7 +281,7 @@ const MainDashboard = ({ onNavigate }: MainDashboardProps) => {
             <Button 
               variant="outline" 
               className="w-full justify-start"
-              onClick={() => onNavigate('workflow')}
+              onClick={() => onNavigate('agents')}
             >
               <Plus className="w-4 h-4 mr-2" />
               Create New Agent

@@ -30,12 +30,13 @@ const Navbar = ({ onNavigate, currentPage }: NavbarProps) => {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
-          <div className="relative overflow-hidden rounded-lg group w-fit">
-            <div className="flex items-center gap-2 p-2">
-              <img src="/favicon.svg" alt="Rebur" className="w-8 h-8" />
-              <span className="text-xl font-bold">Rebur</span>
+          <div className="flex items-center">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                <MessageSquare className="w-4 h-4 text-primary-foreground" />
+              </div>
+              <span className="text-xl font-bold">ChatBase</span>
             </div>
-            <div className="absolute inset-0 bg-black/5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"></div>
           </div>
 
           {/* Navigation */}

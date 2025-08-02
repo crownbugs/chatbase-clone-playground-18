@@ -2,20 +2,14 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { AppSidebar } from "./AppSidebar";
+import Navbar from "./Navbar";
 import MainDashboard from "./MainDashboard";
 import AgentsManager from "./AgentsManager";
 import AnalyticsDashboard from "./AnalyticsDashboard";
 import IntegrationHub from "./IntegrationHub";
 import Settings from "./Settings";
 import ChatWidget from "./ChatWidget";
-import WorkflowBuilder from "./WorkflowBuilder";
 import { Loader2 } from "lucide-react";
-import { 
-  SidebarProvider, 
-  SidebarTrigger 
-} from "@/components/ui/sidebar";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 const AppLayout = () => {
   const [currentPage, setCurrentPage] = useState('dashboard');
@@ -23,7 +17,6 @@ const AppLayout = () => {
   const [activeAgent, setActiveAgent] = useState<string | null>(null);
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const isMobile = useIsMobile(); // Move this to the top, before any early returns
 
   useEffect(() => {
     if (!loading && !user) {
@@ -60,10 +53,6 @@ const AppLayout = () => {
     setCurrentPage(page);
   };
 
-  const handleBackToDashboard = () => {
-    setCurrentPage('dashboard');
-  };
-
   const toggleChatWidget = () => {
     setShowChatWidget(!showChatWidget);
   };
@@ -87,8 +76,6 @@ const AppLayout = () => {
     switch (currentPage) {
       case 'dashboard':
         return <MainDashboard onNavigate={handleNavigate} />;
-      case 'workflow':
-        return <WorkflowBuilder />;
       case 'agents':
         return <AgentsManager />;
       case 'analytics':
@@ -102,11 +89,15 @@ const AppLayout = () => {
     }
   };
 
-
-  // Render workflow page in a completely separate structure to avoid hook conflicts
-  const workflowContent = (
+  return (
     <div className="min-h-screen bg-background">
-      <WorkflowBuilder onBackToDashboard={handleBackToDashboard} />
+      <Navbar onNavigate={handleNavigate} currentPage={currentPage} />
+      
+      <main className="container mx-auto px-4 py-6">
+        {renderCurrentPage()}
+      </main>
+
+      {/* Chat Widget - Only show if user has active agents */}
       {activeAgent && (
         <ChatWidget
           isOpen={showChatWidget}
@@ -116,41 +107,6 @@ const AppLayout = () => {
       )}
     </div>
   );
-
-  // Render main layout with sidebar for all other pages
-  const mainLayoutContent = (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-background">
-        <AppSidebar onNavigate={handleNavigate} currentPage={currentPage} />
-        
-        <div className="flex-1 overflow-hidden">
-          <header className="h-16 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex items-center px-4">
-            <SidebarTrigger />
-            <div className="ml-4 flex items-center gap-2">
-              <img src="/favicon.svg" alt="Rebur" className="w-6 h-6" />
-              <span className="font-semibold">Rebur</span>
-            </div>
-          </header>
-          
-          <main className="flex-1 overflow-auto p-6">
-            {renderCurrentPage()}
-          </main>
-        </div>
-
-        {/* Chat Widget - Only show if user has active agents */}
-        {activeAgent && (
-          <ChatWidget
-            isOpen={showChatWidget}
-            onToggle={toggleChatWidget}
-            agentId={activeAgent}
-          />
-        )}
-      </div>
-    </SidebarProvider>
-  );
-
-  // Return the appropriate content without early returns
-  return currentPage === 'workflow' ? workflowContent : mainLayoutContent;
 };
 
 export default AppLayout;
