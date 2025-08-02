@@ -23,6 +23,7 @@ const AppLayout = () => {
   const [activeAgent, setActiveAgent] = useState<string | null>(null);
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const isMobile = useIsMobile(); // Move this to the top, before any early returns
 
   useEffect(() => {
     if (!loading && !user) {
@@ -97,7 +98,6 @@ const AppLayout = () => {
     }
   };
 
-  const isMobile = useIsMobile();
 
   // Render workflow page in a completely separate structure to avoid hook conflicts
   const workflowContent = (
