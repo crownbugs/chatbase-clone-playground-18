@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import Navbar from "./Navbar";
 import MainDashboard from "./MainDashboard";
 import AgentsManager from "./AgentsManager";
+import AgentBuilder from "./AgentBuilder";
 import AnalyticsDashboard from "./AnalyticsDashboard";
 import IntegrationHub from "./IntegrationHub";
 import Settings from "./Settings";
@@ -77,7 +78,7 @@ const AppLayout = () => {
       case 'dashboard':
         return <MainDashboard onNavigate={handleNavigate} />;
       case 'agents':
-        return <AgentsManager />;
+        return <AgentBuilder />;
       case 'analytics':
         return <AnalyticsDashboard />;
       case 'integrations':
