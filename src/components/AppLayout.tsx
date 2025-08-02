@@ -99,22 +99,22 @@ const AppLayout = () => {
 
   const isMobile = useIsMobile();
 
-  if (currentPage === 'workflow') {
-    return (
-      <div className="min-h-screen bg-background">
-        <WorkflowBuilder />
-        {activeAgent && (
-          <ChatWidget
-            isOpen={showChatWidget}
-            onToggle={toggleChatWidget}
-            agentId={activeAgent}
-          />
-        )}
-      </div>
-    );
-  }
+  // Render workflow page in a completely separate structure to avoid hook conflicts
+  const workflowContent = (
+    <div className="min-h-screen bg-background">
+      <WorkflowBuilder />
+      {activeAgent && (
+        <ChatWidget
+          isOpen={showChatWidget}
+          onToggle={toggleChatWidget}
+          agentId={activeAgent}
+        />
+      )}
+    </div>
+  );
 
-  return (
+  // Render main layout with sidebar for all other pages
+  const mainLayoutContent = (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background">
         <AppSidebar onNavigate={handleNavigate} currentPage={currentPage} />
@@ -144,6 +144,9 @@ const AppLayout = () => {
       </div>
     </SidebarProvider>
   );
+
+  // Return the appropriate content without early returns
+  return currentPage === 'workflow' ? workflowContent : mainLayoutContent;
 };
 
 export default AppLayout;
