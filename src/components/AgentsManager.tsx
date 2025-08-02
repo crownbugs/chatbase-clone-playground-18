@@ -14,7 +14,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { 
   Plus, Bot, Edit, Trash2, MessageSquare, 
   Settings, Copy, ExternalLink, Loader2,
-  Search, Filter, Globe, Upload, FileText, Database, ChevronLeft, ChevronRight
+  Search, Filter, Globe, Upload, FileText, Database, 
+  ChevronLeft, ChevronRight, X
 } from "lucide-react";
 
 interface Agent {
@@ -29,8 +30,11 @@ interface Agent {
   embed_code?: string;
   created_at: string;
   updated_at: string;
-  dataSource?: 'website' | 'files' | 'text' | 'database';
-  sourceConfig?: string;
+}
+
+interface DataSource {
+  type: 'website' | 'files' | 'text' | 'database';
+  config: string | File[];
 }
 
 const AgentsManager = () => {
@@ -41,7 +45,9 @@ const AgentsManager = () => {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
   const [createStep, setCreateStep] = useState(1);
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [dataSources, setDataSources] = useState<DataSource[]>([
+    { type: 'website', config: '' }
+  ]);
   
   const [newAgent, setNewAgent] = useState({
     name: '',
@@ -51,8 +57,6 @@ const AgentsManager = () => {
     temperature: 0.7,
     max_tokens: 1000,
     is_active: true,
-    dataSource: 'website' as 'website' | 'files' | 'text' | 'database',
-    sourceConfig: ''
   });
 
   const { user } = useAuth();
@@ -94,9 +98,42 @@ const AgentsManager = () => {
     }
   };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>, index: number) => {
     const files = Array.from(event.target.files || []);
-    setUploadedFiles(files);
+    const updatedSources = [...dataSources];
+    updatedSources[index].config = files;
+    setDataSources(updatedSources);
+  };
+
+  const addDataSource = () => {
+    setDataSources([...dataSources, { type: 'website', config: '' }]);
+  };
+
+  const removeDataSource = (index: number) => {
+    if (dataSources.length <= 1) return;
+    const updatedSources = [...dataSources];
+    updatedSources.splice(index, 1);
+    setDataSources(updatedSources);
+  };
+
+  const updateDataSourceType = (index: number, type: 'website' | 'files' | 'text' | 'database') => {
+    const updatedSources = [...dataSources];
+    updatedSources[index].type = type;
+    
+    // Reset config when type changes
+    if (type === 'files') {
+      updatedSources[index].config = [];
+    } else {
+      updatedSources[index].config = '';
+    }
+    
+    setDataSources(updatedSources);
+  };
+
+  const updateDataSourceConfig = (index: number, value: string) => {
+    const updatedSources = [...dataSources];
+    updatedSources[index].config = value;
+    setDataSources(updatedSources);
   };
 
   const createAgent = async () => {
@@ -123,8 +160,6 @@ const AgentsManager = () => {
           temperature: newAgent.temperature,
           max_tokens: newAgent.max_tokens,
           is_active: newAgent.is_active,
-          dataSource: newAgent.dataSource,
-          sourceConfig: newAgent.sourceConfig
         })
         .select()
         .single();
@@ -149,65 +184,68 @@ window.chatbaseConfig = {
         .update({ embed_code: embedCode })
         .eq('id', agent.id);
 
-      // Create knowledge base
-      const { data: knowledgeBase, error: kbError } = await supabase
-        .from('knowledge_bases')
-        .insert({
-          agent_id: agent.id,
-          name: `${newAgent.name} Knowledge Base`,
-          type: newAgent.dataSource,
-          content: newAgent.dataSource === 'text' ? newAgent.sourceConfig : null,
-          url: newAgent.dataSource === 'website' ? newAgent.sourceConfig : null,
-        })
-        .select()
-        .single();
-
-      if (kbError) throw kbError;
-
-      // Process data source
-      if (newAgent.dataSource === 'website' && newAgent.sourceConfig) {
-        // Scrape website
-        const response = await supabase.functions.invoke('scrape-website', {
-          body: {
-            url: newAgent.sourceConfig,
-            knowledgeBaseId: knowledgeBase.id,
-          },
-        });
-
-        if (response.error) {
-          console.error('Website scraping failed:', response.error);
-          toast({
-            title: "Warning",
-            description: "Website scraping may not have completed successfully",
-            variant: "default",
-          });
-        }
-      } else if (newAgent.dataSource === 'files' && uploadedFiles.length > 0) {
-        // Upload and process files
-        for (const file of uploadedFiles) {
-          const fileName = `${Date.now()}-${file.name}`;
-          const { error: uploadError } = await supabase.storage
-            .from('documents')
-            .upload(`${user.id}/${fileName}`, file);
-
-          if (!uploadError) {
-            await supabase.functions.invoke('process-document', {
-              body: {
-                fileName,
-                knowledgeBaseId: knowledgeBase.id,
-                userId: user.id,
-              },
-            });
-          } else {
-            console.error('File upload failed:', uploadError);
-          }
-        }
-      } else if (newAgent.dataSource === 'text' && newAgent.sourceConfig) {
-        // Update knowledge base with processed text
-        await supabase
+      // Create knowledge bases and process data sources
+      for (const source of dataSources) {
+        // Create knowledge base
+        const { data: knowledgeBase, error: kbError } = await supabase
           .from('knowledge_bases')
-          .update({ processed: true })
-          .eq('id', knowledgeBase.id);
+          .insert({
+            agent_id: agent.id,
+            name: `${newAgent.name} Knowledge Base - ${source.type}`,
+            type: source.type,
+            content: source.type === 'text' ? source.config as string : null,
+            url: source.type === 'website' ? source.config as string : null,
+          })
+          .select()
+          .single();
+
+        if (kbError) throw kbError;
+
+        // Process data source
+        if (source.type === 'website' && source.config) {
+          // Scrape website
+          const response = await supabase.functions.invoke('scrape-website', {
+            body: {
+              url: source.config as string,
+              knowledgeBaseId: knowledgeBase.id,
+            },
+          });
+
+          if (response.error) {
+            console.error('Website scraping failed:', response.error);
+            toast({
+              title: "Warning",
+              description: `Website scraping for ${source.config} may not have completed successfully`,
+              variant: "default",
+            });
+          }
+        } else if (source.type === 'files' && Array.isArray(source.config) && source.config.length > 0) {
+          // Upload and process files
+          for (const file of source.config as File[]) {
+            const fileName = `${Date.now()}-${file.name}`;
+            const { error: uploadError } = await supabase.storage
+              .from('documents')
+              .upload(`${user.id}/${fileName}`, file);
+
+            if (!uploadError) {
+              await supabase.functions.invoke('process-document', {
+                body: {
+                  fileName,
+                  knowledgeBaseId: knowledgeBase.id,
+                  userId: user.id,
+                },
+              });
+            } else {
+              console.error('File upload failed:', uploadError);
+            }
+          }
+        } else if (source.type === 'text' && source.config) {
+          // Update knowledge base with processed text
+          await supabase
+            .from('knowledge_bases')
+            .update({ processed: true })
+            .eq('id', knowledgeBase.id);
+        }
       }
 
       toast({
@@ -218,7 +256,7 @@ window.chatbaseConfig = {
       // Reset form and close dialog
       setShowCreateDialog(false);
       setCreateStep(1);
-      setUploadedFiles([]);
+      setDataSources([{ type: 'website', config: '' }]);
       setNewAgent({
         name: '',
         description: '',
@@ -227,8 +265,6 @@ window.chatbaseConfig = {
         temperature: 0.7,
         max_tokens: 1000,
         is_active: true,
-        dataSource: 'website',
-        sourceConfig: ''
       });
       
       loadAgents();
@@ -371,7 +407,7 @@ window.chatbaseConfig = {
           setShowCreateDialog(open);
           if (!open) {
             setCreateStep(1);
-            setUploadedFiles([]);
+            setDataSources([{ type: 'website', config: '' }]);
           }
         }}>
           <DialogTrigger asChild>
@@ -384,12 +420,12 @@ window.chatbaseConfig = {
             <DialogHeader>
               <DialogTitle>
                 {createStep === 1 && "Basic Information"}
-                {createStep === 2 && "Data Source"}
+                {createStep === 2 && "Data Sources"}
                 {createStep === 3 && "Agent Configuration"}
               </DialogTitle>
               <DialogDescription>
                 {createStep === 1 && "Let's start with the basics about your AI agent"}
-                {createStep === 2 && "Choose how to train your AI agent"}
+                {createStep === 2 && "Add knowledge sources for your AI agent"}
                 {createStep === 3 && "Set up your agent's behavior and responses"}
               </DialogDescription>
             </DialogHeader>
@@ -445,90 +481,120 @@ window.chatbaseConfig = {
               </div>
             )}
             
-            {/* Step 2: Data Source */}
+            {/* Step 2: Data Sources */}
             {createStep === 2 && (
               <div className="space-y-6">
-                <div>
-                  <Label>Data Source Type *</Label>
-                  <Select
-                    value={newAgent.dataSource}
-                    onValueChange={(value: 'website' | 'files' | 'text' | 'database') => 
-                      setNewAgent({ ...newAgent, dataSource: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {dataSourceOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          <div className="flex items-center gap-2">
-                            <option.icon className="w-4 h-4" />
-                            {option.label}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <div className="space-y-4">
+                  {dataSources.map((source, index) => (
+                    <Card key={index} className="p-4 relative">
+                      <div className="flex justify-between items-start mb-3">
+                        <Label className="text-sm font-medium">Data Source #{index + 1}</Label>
+                        {dataSources.length > 1 && (
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-6 w-6"
+                            onClick={() => removeDataSource(index)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                      
+                      <div className="space-y-4">
+                        <div>
+                          <Label>Source Type *</Label>
+                          <Select
+                            value={source.type}
+                            onValueChange={(value: 'website' | 'files' | 'text' | 'database') => 
+                              updateDataSourceType(index, value)
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {dataSourceOptions.map((option) => (
+                                <SelectItem key={option.value} value={option.value}>
+                                  <div className="flex items-center gap-2">
+                                    <option.icon className="w-4 h-4" />
+                                    {option.label}
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div>
+                          <Label>
+                            {source.type === 'website' && 'Website URL *'}
+                            {source.type === 'files' && 'Upload Files *'}
+                            {source.type === 'text' && 'Training Text *'}
+                            {source.type === 'database' && 'Database Connection *'}
+                          </Label>
+                          
+                          {source.type === 'files' ? (
+                            <div className="space-y-4">
+                              <div className="border-2 border-dashed border-muted rounded-lg p-6 text-center">
+                                <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                                <p className="text-muted-foreground">Upload documents (PDF, TXT, DOC, etc.)</p>
+                                <input
+                                  type="file"
+                                  multiple
+                                  onChange={(e) => handleFileUpload(e, index)}
+                                  className="hidden"
+                                  id={`file-upload-${index}`}
+                                  accept=".pdf,.txt,.doc,.docx,.json,.html,.htm"
+                                />
+                                <Button 
+                                  variant="outline" 
+                                  className="mt-2"
+                                  onClick={() => document.getElementById(`file-upload-${index}`)?.click()}
+                                >
+                                  Choose Files
+                                </Button>
+                              </div>
+                              {Array.isArray(source.config) && source.config.length > 0 && (
+                                <div className="space-y-2">
+                                  <p className="text-sm font-medium">Selected files:</p>
+                                  {source.config.map((file, fileIndex) => (
+                                    <div key={fileIndex} className="flex items-center justify-between p-2 bg-muted rounded">
+                                      <span className="text-sm">{file.name}</span>
+                                      <span className="text-xs text-muted-foreground">
+                                        {(file.size / 1024).toFixed(1)} KB
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <Textarea
+                              value={source.config as string}
+                              onChange={(e) => updateDataSourceConfig(index, e.target.value)}
+                              placeholder={
+                                source.type === 'website' ? 'https://your-website.com' :
+                                source.type === 'text' ? 'Enter your training text here...' :
+                                'Database connection string'
+                              }
+                              rows={3}
+                            />
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
                 </div>
 
-                <div>
-                  <Label htmlFor="sourceConfig">
-                    {newAgent.dataSource === 'website' && 'Website URL *'}
-                    {newAgent.dataSource === 'files' && 'Upload Files *'}
-                    {newAgent.dataSource === 'text' && 'Training Text *'}
-                    {newAgent.dataSource === 'database' && 'Database Connection *'}
-                  </Label>
-                  
-                  {newAgent.dataSource === 'files' ? (
-                    <div className="space-y-4">
-                      <div className="border-2 border-dashed border-muted rounded-lg p-8 text-center">
-                        <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
-                        <p className="text-muted-foreground">Upload documents (PDF, TXT, DOC, etc.)</p>
-                        <input
-                          type="file"
-                          multiple
-                          onChange={handleFileUpload}
-                          className="hidden"
-                          id="file-upload"
-                          accept=".pdf,.txt,.doc,.docx,.json,.html,.htm"
-                        />
-                        <Button 
-                          variant="outline" 
-                          className="mt-2"
-                          onClick={() => document.getElementById('file-upload')?.click()}
-                        >
-                          Choose Files
-                        </Button>
-                      </div>
-                      {uploadedFiles.length > 0 && (
-                        <div className="space-y-2">
-                          <p className="text-sm font-medium">Selected files:</p>
-                          {uploadedFiles.map((file, index) => (
-                            <div key={index} className="flex items-center justify-between p-2 bg-muted rounded">
-                              <span className="text-sm">{file.name}</span>
-                              <span className="text-xs text-muted-foreground">
-                                {(file.size / 1024).toFixed(1)} KB
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <Textarea
-                      id="sourceConfig"
-                      value={newAgent.sourceConfig}
-                      onChange={(e) => setNewAgent({ ...newAgent, sourceConfig: e.target.value })}
-                      placeholder={
-                        newAgent.dataSource === 'website' ? 'https://your-website.com' :
-                        newAgent.dataSource === 'text' ? 'Enter your training text here...' :
-                        'Database connection string'
-                      }
-                      rows={4}
-                    />
-                  )}
-                </div>
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={addDataSource}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Another Data Source
+                </Button>
               </div>
             )}
             
