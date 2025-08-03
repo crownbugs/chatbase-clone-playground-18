@@ -6,7 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { Loader2, MessageSquare } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import Logo from "@/components/Logo"; // Import the Logo component
 
 const Auth = () => {
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
@@ -63,13 +64,16 @@ const Auth = () => {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6">
-        {/* Logo */}
-        <div className="text-center">
-          <div className="mx-auto w-12 h-12 bg-primary rounded-lg flex items-center justify-center mb-4">
-            <MessageSquare className="w-6 h-6 text-primary-foreground" />
-          </div>
-          <h1 className="text-2xl font-bold">ChatBase Clone</h1>
-          <p className="text-muted-foreground">Build AI chatbots for your website</p>
+        {/* Logo with centered layout */}
+        <div className="flex flex-col items-center justify-center">
+          <Logo 
+            showText={true} 
+            size="md"
+            className="flex flex-col items-center justify-center"
+          />
+          <p className="text-muted-foreground mt-2 text-center">
+            Build AI chatbots for your website
+          </p>
         </div>
 
         <Card>
