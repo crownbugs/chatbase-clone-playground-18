@@ -8,7 +8,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
-import { MessageSquare, User, LogOut, Settings, Menu, X } from "lucide-react";
+import { User, LogOut, Settings, Menu, X } from "lucide-react";
+import Logo from "@/components/Logo"; // Import the Logo component
 
 interface NavbarProps {
   onNavigate: (page: string) => void;
@@ -47,12 +48,11 @@ const Navbar = ({ onNavigate, currentPage }: NavbarProps) => {
             </Button>
             
             {/* Logo */}
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <MessageSquare className="w-4 h-4 text-primary-foreground" />
-              </div>
-              <span className="text-xl font-bold">ChatBase</span>
-            </div>
+            <Logo 
+              showText={true} 
+              size="sm" 
+              className="flex-shrink-0"
+            />
           </div>
 
           {/* Center: Desktop Navigation */}
@@ -103,7 +103,7 @@ const Navbar = ({ onNavigate, currentPage }: NavbarProps) => {
         </div>
       </div>
 
-      {/* Mobile Navigation (now toggleable) */}
+      {/* Mobile Navigation */}
       {isMobileMenuOpen && (
         <div className="md:hidden">
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t">
