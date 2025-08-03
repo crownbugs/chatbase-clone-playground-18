@@ -69,7 +69,7 @@ const Auth = () => {
           <Logo 
             showText={false} 
             size="lg"
-            className="h-24 w-24" // Increased logo size
+            className="h-52 w-52" // Increased logo size
           />
           <h1 className="text-5xl font-bold tracking-tight">Rebur</h1> {/* Larger text */}
           <p className="text-muted-foreground text-center">
