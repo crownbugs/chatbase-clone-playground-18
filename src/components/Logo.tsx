@@ -4,25 +4,21 @@ import { cn } from "@/lib/utils";
 
 interface LogoProps {
   showText?: boolean;
-  size?: 'sm' | 'md' | 'lg' | 'xl' | 'xxl';
+  size?: 'sm' | 'md' | 'lg';
   className?: string;
 }
 
 const Logo: React.FC<LogoProps> = ({ showText = true, size = 'md', className }) => {
   const sizes = {
     sm: 'h-8 w-8',
-    md: 'h-12 w-12',
-    lg: 'h-20 w-20',
-    xl: 'h-24 w-24',
-    xxl: 'h-48 w-48'
+    md: 'h-10 w-10',
+    lg: 'h-14 w-14',
   };
   
   const textSizes = {
     sm: 'text-lg',
     md: 'text-xl',
-    lg: 'text-3xl',
-    xl: 'text-5xl',
-    xxl: 'text-7xl'
+    lg: 'text-2xl',
   };
 
   return (
