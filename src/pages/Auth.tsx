@@ -65,17 +65,15 @@ const Auth = () => {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo with centered layout */}
-        <div className="flex flex-col items-center justify-center mb-8"> {/* Added margin-bottom */}
+        <div className="flex flex-col items-center justify-center mb-8">
           {/* HUGE Logo */}
-          <div className="w-48 h-48 mb-4"> {/* Fixed size container */}
-            <Logo 
-              showText={false} 
-              className="h-full w-full" /* Make logo fill container */
-            />
-          </div>
+          <Logo 
+            showText={false} 
+            size="xxl" // Using the new xxl size (192x192px)
+          />
           
           {/* HUGE Rebur Text */}
-          <h1 className="text-5xl font-bold tracking-tighter">REBUR</h1>
+          <h1 className="text-7xl font-bold tracking-tighter mt-4">REBUR</h1>
           
           {/* Description */}
           <p className="text-muted-foreground text-center mt-2">
@@ -128,52 +126,52 @@ const Auth = () => {
                 <Input
                   id="email"
                   type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  minLength={6}
-                />
-              </div>
-              
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {mode === 'signin' ? 'Sign In' : 'Create Account'}
-              </Button>
-            </form>
-            
-            <div className="text-center text-sm mt-4">
-              {mode === 'signin' ? (
-                <>
-                  Don't have an account?{' '}
-                  <Button variant="link" onClick={() => setMode('signup')} className="p-0 h-auto">
-                    Sign up
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="password">Password</Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      minLength={6}
+                    />
+                  </div>
+                  
+                  <Button type="submit" className="w-full" disabled={loading}>
+                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {mode === 'signin' ? 'Sign In' : 'Create Account'}
                   </Button>
-                </>
-              ) : (
-                <>
-                  Already have an account?{' '}
-                  <Button variant="link" onClick={() => setMode('signin')} className="p-0 h-auto">
-                    Sign in
-                  </Button>
-                </>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
-};
-
-export default Auth;
+                </form>
+                
+                <div className="text-center text-sm mt-4">
+                  {mode === 'signin' ? (
+                    <>
+                      Don't have an account?{' '}
+                      <Button variant="link" onClick={() => setMode('signup')} className="p-0 h-auto">
+                        Sign up
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      Already have an account?{' '}
+                      <Button variant="link" onClick={() => setMode('signin')} className="p-0 h-auto">
+                        Sign in
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      );
+    };
+    
+    export default Auth;
