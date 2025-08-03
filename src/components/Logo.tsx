@@ -13,7 +13,7 @@ const Logo: React.FC<LogoProps> = ({ showText = true, size = 'md', className }) 
     sm: 'h-8 w-8',
     md: 'h-12 w-12',
     lg: 'h-20 w-20',
-    xl: 'h-32 w-32',
+    xl: 'h-24 w-24',
     xxl: 'h-48 w-48'
   };
   
