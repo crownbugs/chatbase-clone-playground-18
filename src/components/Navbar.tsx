@@ -17,9 +17,14 @@ interface NavbarProps {
   onToggleCollapse?: () => void;
 }
 
-const Navbar = ({ onNavigate, currentPage, collapsed = false, onToggleCollapse }: NavbarProps) => {
+const Navbar = ({ 
+  onNavigate, 
+  currentPage, 
+  collapsed = false, 
+  onToggleCollapse 
+}: NavbarProps) => {
   const { user, signOut } = useAuth();
-
+  
   const navigation = [
     { name: 'Dashboard', id: 'dashboard' },
     { name: 'My Agents', id: 'agents' },
@@ -27,17 +32,17 @@ const Navbar = ({ onNavigate, currentPage, collapsed = false, onToggleCollapse }
     { name: 'Integrations', id: 'integrations' },
   ];
 
+  const isCollapsible = typeof onToggleCollapse !== 'undefined';
+  const showFullContent = !collapsed || !isCollapsible;
+  const heightClass = isCollapsible ? (collapsed ? 'h-12' : 'h-16') : 'h-16';
+
   return (
-    <nav className={`border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 transition-all duration-300 ${
-      collapsed ? 'h-12' : 'h-16'
-    }`}>
+    <nav className={`border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 transition-all duration-300 ${heightClass}`}>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className={`flex items-center justify-between transition-all duration-300 ${
-          collapsed ? 'h-12' : 'h-16'
-        }`}>
-          {/* Logo and Collapse Toggle */}
+        <div className={`flex items-center justify-between transition-all duration-300 ${heightClass}`}>
+          {/* Left section: Toggle + Logo */}
           <div className="flex items-center gap-2">
-            {onToggleCollapse && (
+            {isCollapsible && (
               <Button 
                 variant="ghost" 
                 size="icon"
@@ -47,16 +52,19 @@ const Navbar = ({ onNavigate, currentPage, collapsed = false, onToggleCollapse }
                 {collapsed ? <Menu className="h-4 w-4" /> : <X className="h-4 w-4" />}
               </Button>
             )}
+            
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                 <MessageSquare className="w-4 h-4 text-primary-foreground" />
               </div>
-              {!collapsed && <span className="text-xl font-bold">ChatBase</span>}
+              {showFullContent && (
+                <span className="text-xl font-bold">ChatBase</span>
+              )}
             </div>
           </div>
 
-          {/* Navigation */}
-          {!collapsed && (
+          {/* Center: Desktop Navigation */}
+          {showFullContent && (
             <div className="hidden md:block">
               <div className="ml-10 flex items-baseline space-x-4">
                 {navigation.map((item) => (
@@ -73,7 +81,7 @@ const Navbar = ({ onNavigate, currentPage, collapsed = false, onToggleCollapse }
             </div>
           )}
 
-          {/* User menu */}
+          {/* Right section: User Menu */}
           <div className="flex items-center gap-4">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -105,8 +113,8 @@ const Navbar = ({ onNavigate, currentPage, collapsed = false, onToggleCollapse }
         </div>
       </div>
 
-      {/* Mobile navigation */}
-      {!collapsed && (
+      {/* Mobile Navigation */}
+      {showFullContent && (
         <div className="md:hidden">
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t">
             {navigation.map((item) => (
