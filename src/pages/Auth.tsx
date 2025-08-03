@@ -69,7 +69,7 @@ const Auth = () => {
           {/* HUGE Logo */}
           <Logo 
             showText={false} 
-            size="x1" // Using the new xl size (...)
+            size="xl" // Using the new xl size (...)
           />
           
           {/* HUGE Rebur Text */}
