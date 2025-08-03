@@ -39,6 +39,7 @@ interface DataSource {
   websiteConfig?: {
     mode: 'crawl' | 'scrape';
     url: string;
+    urls: string[];
     includePaths?: string;
     excludePaths?: string;
   };
@@ -56,10 +57,17 @@ const AgentsManager = () => {
     { 
       type: 'website', 
       config: '',
-      websiteConfig: { mode: 'crawl', url: '', includePaths: '', excludePaths: '' }
+      websiteConfig: { 
+        mode: 'crawl', 
+        url: '', 
+        urls: [''], 
+        includePaths: '', 
+        excludePaths: '' 
+      }
     }
   ]);
   const [showWebsiteConfig, setShowWebsiteConfig] = useState<number | null>(null);
+  const [newUrl, setNewUrl] = useState('');
   
   const [newAgent, setNewAgent] = useState({
     name: '',
@@ -121,7 +129,13 @@ const AgentsManager = () => {
     setDataSources([...dataSources, { 
       type: 'website', 
       config: '',
-      websiteConfig: { mode: 'crawl', url: '', includePaths: '', excludePaths: '' }
+      websiteConfig: { 
+        mode: 'crawl', 
+        url: '', 
+        urls: [''],
+        includePaths: '', 
+        excludePaths: '' 
+      }
     }]);
   };
 
@@ -145,7 +159,13 @@ const AgentsManager = () => {
     
     // Initialize website config if needed
     if (type === 'website' && !updatedSources[index].websiteConfig) {
-      updatedSources[index].websiteConfig = { mode: 'crawl', url: '', includePaths: '', excludePaths: '' };
+      updatedSources[index].websiteConfig = { 
+        mode: 'crawl', 
+        url: '', 
+        urls: [''],
+        includePaths: '', 
+        excludePaths: '' 
+      };
     }
     
     setDataSources(updatedSources);
@@ -164,6 +184,49 @@ const AgentsManager = () => {
         ...updatedSources[index].websiteConfig,
         ...config
       };
+      setDataSources(updatedSources);
+    }
+  };
+
+  // Add a new URL to the scrape list
+  const addScrapeUrl = () => {
+    if (showWebsiteConfig === null) return;
+    
+    const updatedSources = [...dataSources];
+    if (updatedSources[showWebsiteConfig].websiteConfig) {
+      updatedSources[showWebsiteConfig].websiteConfig.urls = [
+        ...updatedSources[showWebsiteConfig].websiteConfig.urls,
+        newUrl
+      ];
+      setDataSources(updatedSources);
+      setNewUrl(''); // Reset input
+    }
+  };
+
+  // Remove a URL from the scrape list
+  const removeScrapeUrl = (urlIndex: number) => {
+    if (showWebsiteConfig === null) return;
+    
+    const updatedSources = [...dataSources];
+    if (updatedSources[showWebsiteConfig].websiteConfig) {
+      const newUrls = [...updatedSources[showWebsiteConfig].websiteConfig.urls];
+      newUrls.splice(urlIndex, 1);
+      
+      updatedSources[showWebsiteConfig].websiteConfig.urls = newUrls;
+      setDataSources(updatedSources);
+    }
+  };
+
+  // Update a URL in the scrape list
+  const updateScrapeUrl = (urlIndex: number, value: string) => {
+    if (showWebsiteConfig === null) return;
+    
+    const updatedSources = [...dataSources];
+    if (updatedSources[showWebsiteConfig].websiteConfig) {
+      const newUrls = [...updatedSources[showWebsiteConfig].websiteConfig.urls];
+      newUrls[urlIndex] = value;
+      
+      updatedSources[showWebsiteConfig].websiteConfig.urls = newUrls;
       setDataSources(updatedSources);
     }
   };
@@ -236,32 +299,46 @@ window.chatbaseConfig = {
 
         // Process data source
         if (source.type === 'website' && source.websiteConfig) {
-          // Scrape or crawl website
-          const endpoint = source.websiteConfig.mode === 'crawl' 
-            ? 'crawl-website' 
-            : 'scrape-website';
-            
-          const body = source.websiteConfig.mode === 'crawl'
-            ? {
+          if (source.websiteConfig.mode === 'crawl') {
+            // Crawl website
+            const response = await supabase.functions.invoke('crawl-website', {
+              body: {
                 url: source.websiteConfig.url,
                 includePaths: source.websiteConfig.includePaths,
                 excludePaths: source.websiteConfig.excludePaths,
                 knowledgeBaseId: knowledgeBase.id,
-              }
-            : {
-                url: source.websiteConfig.url,
-                knowledgeBaseId: knowledgeBase.id,
-              };
-
-          const response = await supabase.functions.invoke(endpoint, { body });
-
-          if (response.error) {
-            console.error('Website processing failed:', response.error);
-            toast({
-              title: "Warning",
-              description: `Website processing for ${source.websiteConfig.url} may not have completed successfully`,
-              variant: "default",
+              },
             });
+
+            if (response.error) {
+              console.error('Website crawling failed:', response.error);
+              toast({
+                title: "Warning",
+                description: `Website crawling for ${source.websiteConfig.url} may not have completed successfully`,
+                variant: "default",
+              });
+            }
+          } else {
+            // Scrape multiple URLs
+            for (const url of source.websiteConfig.urls) {
+              if (url.trim()) {
+                const response = await supabase.functions.invoke('scrape-website', {
+                  body: {
+                    url: url,
+                    knowledgeBaseId: knowledgeBase.id,
+                  },
+                });
+
+                if (response.error) {
+                  console.error('Website scraping failed:', response.error);
+                  toast({
+                    title: "Warning",
+                    description: `Website scraping for ${url} may not have completed successfully`,
+                    variant: "default",
+                  });
+                }
+              }
+            }
           }
         } else if (source.type === 'files' && Array.isArray(source.config) && source.config.length > 0) {
           // Upload and process files
@@ -303,7 +380,13 @@ window.chatbaseConfig = {
       setDataSources([{ 
         type: 'website', 
         config: '',
-        websiteConfig: { mode: 'crawl', url: '', includePaths: '', excludePaths: '' }
+        websiteConfig: { 
+          mode: 'crawl', 
+          url: '', 
+          urls: [''],
+          includePaths: '', 
+          excludePaths: '' 
+        }
       }]);
       setNewAgent({
         name: '',
@@ -458,7 +541,13 @@ window.chatbaseConfig = {
             setDataSources([{ 
               type: 'website', 
               config: '',
-              websiteConfig: { mode: 'crawl', url: '', includePaths: '', excludePaths: '' }
+              websiteConfig: { 
+                mode: 'crawl', 
+                url: '', 
+                urls: [''],
+                includePaths: '', 
+                excludePaths: '' 
+              }
             }]);
             setShowWebsiteConfig(null);
           }
@@ -606,7 +695,15 @@ window.chatbaseConfig = {
                                     )}
                                   </div>
                                 ) : (
-                                  <p><span className="font-medium">Scrape:</span> {source.websiteConfig.url || 'No URL set'}</p>
+                                  <div>
+                                    <p><span className="font-medium">Scrape:</span></p>
+                                    {source.websiteConfig.urls.filter(url => url.trim()).map((url, i) => (
+                                      <p key={i} className="truncate">{url}</p>
+                                    ))}
+                                    {!source.websiteConfig.urls.filter(url => url.trim()).length && (
+                                      <p>No URLs added</p>
+                                    )}
+                                  </div>
                                 )}
                               </div>
                             )}
@@ -856,13 +953,41 @@ window.chatbaseConfig = {
               
               <TabsContent value="scrape" className="space-y-4 pt-4">
                 <div>
-                  <Label htmlFor="scrapeUrl">Page URL *</Label>
-                  <Input
-                    id="scrapeUrl"
-                    value={dataSources[showWebsiteConfig].websiteConfig?.url || ''}
-                    onChange={(e) => updateWebsiteConfig(showWebsiteConfig, { url: e.target.value })}
-                    placeholder="https://your-website.com/specific-page"
-                  />
+                  <Label>Page URLs *</Label>
+                  <div className="space-y-2 mb-4">
+                    {dataSources[showWebsiteConfig].websiteConfig?.urls.map((url, urlIndex) => (
+                      <div key={urlIndex} className="flex items-center gap-2">
+                        <Input
+                          value={url}
+                          onChange={(e) => updateScrapeUrl(urlIndex, e.target.value)}
+                          placeholder="https://your-website.com/page"
+                        />
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => removeScrapeUrl(urlIndex)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <Input
+                      value={newUrl}
+                      onChange={(e) => setNewUrl(e.target.value)}
+                      placeholder="https://your-website.com/page"
+                    />
+                    <Button 
+                      variant="outline"
+                      onClick={addScrapeUrl}
+                      disabled={!newUrl.trim()}
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Add URL
+                    </Button>
+                  </div>
                 </div>
                 
                 <div className="flex justify-end pt-2">
@@ -879,7 +1004,7 @@ window.chatbaseConfig = {
             </Tabs>
           </DialogContent>
         </Dialog>
-      )}
+      </div>
 
       {/* Search */}
       <div className="flex gap-4">
@@ -963,7 +1088,7 @@ window.chatbaseConfig = {
                     size="sm"
                     onClick={() => copyEmbedCode(agent.embed_code || '')}
                   >
-                    <Copy className="w-4 h-4" />
+                    <Copy className="w-4 w-4" />
                   </Button>
                   
                   <Button
