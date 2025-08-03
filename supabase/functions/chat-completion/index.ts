@@ -87,46 +87,55 @@ serve(async (req) => {
         content: message,
       });
 
-    // Get relevant knowledge from RAG using embeddings
-    const { data: embeddings } = await supabaseClient
-      .from('embeddings')
-      .select(`
-        content,
-        knowledge_bases!inner(agent_id)
-      `)
-      .eq('knowledge_bases.agent_id', agentId)
-      .textSearch('content', message.split(' ').join(' | '))
-      .limit(5);
+    // Get relevant knowledge from RAG using embeddings for better semantic search
+    const { data: knowledgeBases } = await supabaseClient
+      .from('knowledge_bases')
+      .select('*')
+      .eq('agent_id', agentId)
+      .eq('processed', true);
 
     let context = '';
-    if (embeddings && embeddings.length > 0) {
-      const relevantContent = embeddings
-        .map(emb => emb.content)
-        .join('\n\n');
+    if (knowledgeBases && knowledgeBases.length > 0) {
+      // First try to get embeddings for semantic search
+      const { data: embeddings } = await supabaseClient
+        .from('embeddings')
+        .select('content, metadata')
+        .in('knowledge_base_id', knowledgeBases.map(kb => kb.id))
+        .limit(10);
 
-      if (relevantContent) {
-        context = `\n\nRelevant information from knowledge base:\n${relevantContent}`;
+      let relevantContent = '';
+      
+      if (embeddings && embeddings.length > 0) {
+        // Use embeddings content with better relevance scoring
+        const messageWords = message.toLowerCase().split(/\s+/);
+        const scoredContent = embeddings
+          .map(emb => {
+            const contentWords = emb.content.toLowerCase().split(/\s+/);
+            const relevanceScore = messageWords.reduce((score, word) => {
+              return score + (contentWords.includes(word) ? 1 : 0);
+            }, 0);
+            return { content: emb.content, score: relevanceScore };
+          })
+          .filter(item => item.score > 0)
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 3)
+          .map(item => item.content)
+          .join('\n\n');
+        
+        relevantContent = scoredContent;
       }
-    }
-
-    // Fallback to knowledge_bases if no embeddings found
-    if (!context) {
-      const { data: knowledgeBases } = await supabaseClient
-        .from('knowledge_bases')
-        .select('content')
-        .eq('agent_id', agentId)
-        .eq('processed', true);
-
-      if (knowledgeBases && knowledgeBases.length > 0) {
-        const relevantContent = knowledgeBases
+      
+      // Fallback to knowledge base content if no embeddings
+      if (!relevantContent) {
+        relevantContent = knowledgeBases
           .filter(kb => kb.content && kb.content.toLowerCase().includes(message.toLowerCase()))
           .map(kb => kb.content)
           .slice(0, 3)
           .join('\n\n');
+      }
 
-        if (relevantContent) {
-          context = `\n\nRelevant information from knowledge base:\n${relevantContent}`;
-        }
+      if (relevantContent) {
+        context = `\n\nRelevant information from knowledge base:\n${relevantContent}`;
       }
     }
 

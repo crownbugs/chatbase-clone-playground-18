@@ -120,8 +120,19 @@ const AgentsManager = () => {
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>, index: number) => {
     const files = Array.from(event.target.files || []);
+    // Append new files to existing ones instead of replacing
+    const existingFiles = Array.isArray(dataSources[index].config) ? dataSources[index].config as File[] : [];
+    const allFiles = [...existingFiles, ...files];
     const updatedSources = [...dataSources];
-    updatedSources[index].config = files;
+    updatedSources[index].config = allFiles;
+    setDataSources(updatedSources);
+  };
+
+  const removeFile = (sourceIndex: number, fileIndex: number) => {
+    const files = dataSources[sourceIndex].config as File[];
+    const updatedFiles = files.filter((_, index) => index !== fileIndex);
+    const updatedSources = [...dataSources];
+    updatedSources[sourceIndex].config = updatedFiles;
     setDataSources(updatedSources);
   };
 
@@ -734,12 +745,22 @@ window.chatbaseConfig = {
                               {Array.isArray(source.config) && source.config.length > 0 && (
                                 <div className="space-y-2">
                                   <p className="text-sm font-medium">Selected files:</p>
-                                  {source.config.map((file, fileIndex) => (
+                              {source.config.map((file, fileIndex) => (
                                     <div key={fileIndex} className="flex items-center justify-between p-2 bg-muted rounded">
-                                      <span className="text-sm">{file.name}</span>
-                                      <span className="text-xs text-muted-foreground">
-                                        {(file.size / 1024).toFixed(1)} KB
-                                      </span>
+                                      <div className="flex-1">
+                                        <span className="text-sm">{file.name}</span>
+                                        <p className="text-xs text-muted-foreground">
+                                          {(file.size / 1024).toFixed(1)} KB
+                                        </p>
+                                      </div>
+                                      <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        className="h-6 w-6"
+                                        onClick={() => removeFile(index, fileIndex)}
+                                      >
+                                        <X className="h-4 w-4" />
+                                      </Button>
                                     </div>
                                   ))}
                                 </div>
