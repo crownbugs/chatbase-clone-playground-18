@@ -65,13 +65,14 @@ const Auth = () => {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6">
         {/* Logo with centered layout */}
-        <div className="flex flex-col items-center justify-center">
+        <div className="flex flex-col items-center justify-center space-y-2">
           <Logo 
-            showText={true} 
+            showText={false} 
             size="lg"
-            className="flex flex-col items-center [&>a>div:last-child>span:last-child]:hidden"
+            className="h-24 w-24" // Increased logo size
           />
-          <p className="text-muted-foreground mt-2 text-center">
+          <h1 className="text-5xl font-bold tracking-tight">Rebur</h1> {/* Larger text */}
+          <p className="text-muted-foreground text-center">
             Build AI chatbots for your website
           </p>
         </div>
