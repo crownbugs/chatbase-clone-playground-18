@@ -73,11 +73,11 @@ const Auth = () => {
           />
           
           {/* Rebur Text */}
-          <h1 className="text-5xl font-bold tracking-tighter mt-4">Rebur</h1>
+          <h1 className="text-4xl font-bold tracking-tighter mt-4">Rebur</h1>
           
           {/* Description */}
           <p className="text-muted-foreground text-center mt-2">
-            Build AI chatbots for your website
+            Build AI Agents for your website
           </p>
         </div>
 
