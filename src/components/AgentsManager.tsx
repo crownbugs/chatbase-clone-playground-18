@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,7 +16,7 @@ import {
   Plus, Bot, Edit, Trash2, MessageSquare, 
   Settings, Copy, ExternalLink, Loader2,
   Search, Filter, Globe, Upload, FileText, Database, 
-  ChevronLeft, ChevronRight, X
+  ChevronLeft, ChevronRight, X, Link, List, LayoutGrid
 } from "lucide-react";
 
 interface Agent {
@@ -35,6 +36,12 @@ interface Agent {
 interface DataSource {
   type: 'website' | 'files' | 'text' | 'database';
   config: string | File[];
+  websiteConfig?: {
+    mode: 'crawl' | 'scrape';
+    url: string;
+    includePaths?: string;
+    excludePaths?: string;
+  };
 }
 
 const AgentsManager = () => {
@@ -46,8 +53,13 @@ const AgentsManager = () => {
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
   const [createStep, setCreateStep] = useState(1);
   const [dataSources, setDataSources] = useState<DataSource[]>([
-    { type: 'website', config: '' }
+    { 
+      type: 'website', 
+      config: '',
+      websiteConfig: { mode: 'crawl', url: '', includePaths: '', excludePaths: '' }
+    }
   ]);
+  const [showWebsiteConfig, setShowWebsiteConfig] = useState<number | null>(null);
   
   const [newAgent, setNewAgent] = useState({
     name: '',
@@ -106,7 +118,11 @@ const AgentsManager = () => {
   };
 
   const addDataSource = () => {
-    setDataSources([...dataSources, { type: 'website', config: '' }]);
+    setDataSources([...dataSources, { 
+      type: 'website', 
+      config: '',
+      websiteConfig: { mode: 'crawl', url: '', includePaths: '', excludePaths: '' }
+    }]);
   };
 
   const removeDataSource = (index: number) => {
@@ -127,6 +143,11 @@ const AgentsManager = () => {
       updatedSources[index].config = '';
     }
     
+    // Initialize website config if needed
+    if (type === 'website' && !updatedSources[index].websiteConfig) {
+      updatedSources[index].websiteConfig = { mode: 'crawl', url: '', includePaths: '', excludePaths: '' };
+    }
+    
     setDataSources(updatedSources);
   };
 
@@ -134,6 +155,17 @@ const AgentsManager = () => {
     const updatedSources = [...dataSources];
     updatedSources[index].config = value;
     setDataSources(updatedSources);
+  };
+
+  const updateWebsiteConfig = (index: number, config: any) => {
+    const updatedSources = [...dataSources];
+    if (updatedSources[index].websiteConfig) {
+      updatedSources[index].websiteConfig = {
+        ...updatedSources[index].websiteConfig,
+        ...config
+      };
+      setDataSources(updatedSources);
+    }
   };
 
   const createAgent = async () => {
@@ -194,7 +226,8 @@ window.chatbaseConfig = {
             name: `${newAgent.name} Knowledge Base - ${source.type}`,
             type: source.type,
             content: source.type === 'text' ? source.config as string : null,
-            url: source.type === 'website' ? source.config as string : null,
+            url: source.type === 'website' ? source.websiteConfig?.url : null,
+            config: source.type === 'website' ? JSON.stringify(source.websiteConfig) : null
           })
           .select()
           .single();
@@ -202,20 +235,31 @@ window.chatbaseConfig = {
         if (kbError) throw kbError;
 
         // Process data source
-        if (source.type === 'website' && source.config) {
-          // Scrape website
-          const response = await supabase.functions.invoke('scrape-website', {
-            body: {
-              url: source.config as string,
-              knowledgeBaseId: knowledgeBase.id,
-            },
-          });
+        if (source.type === 'website' && source.websiteConfig) {
+          // Scrape or crawl website
+          const endpoint = source.websiteConfig.mode === 'crawl' 
+            ? 'crawl-website' 
+            : 'scrape-website';
+            
+          const body = source.websiteConfig.mode === 'crawl'
+            ? {
+                url: source.websiteConfig.url,
+                includePaths: source.websiteConfig.includePaths,
+                excludePaths: source.websiteConfig.excludePaths,
+                knowledgeBaseId: knowledgeBase.id,
+              }
+            : {
+                url: source.websiteConfig.url,
+                knowledgeBaseId: knowledgeBase.id,
+              };
+
+          const response = await supabase.functions.invoke(endpoint, { body });
 
           if (response.error) {
-            console.error('Website scraping failed:', response.error);
+            console.error('Website processing failed:', response.error);
             toast({
               title: "Warning",
-              description: `Website scraping for ${source.config} may not have completed successfully`,
+              description: `Website processing for ${source.websiteConfig.url} may not have completed successfully`,
               variant: "default",
             });
           }
@@ -256,7 +300,11 @@ window.chatbaseConfig = {
       // Reset form and close dialog
       setShowCreateDialog(false);
       setCreateStep(1);
-      setDataSources([{ type: 'website', config: '' }]);
+      setDataSources([{ 
+        type: 'website', 
+        config: '',
+        websiteConfig: { mode: 'crawl', url: '', includePaths: '', excludePaths: '' }
+      }]);
       setNewAgent({
         name: '',
         description: '',
@@ -407,7 +455,12 @@ window.chatbaseConfig = {
           setShowCreateDialog(open);
           if (!open) {
             setCreateStep(1);
-            setDataSources([{ type: 'website', config: '' }]);
+            setDataSources([{ 
+              type: 'website', 
+              config: '',
+              websiteConfig: { mode: 'crawl', url: '', includePaths: '', excludePaths: '' }
+            }]);
+            setShowWebsiteConfig(null);
           }
         }}>
           <DialogTrigger asChild>
@@ -526,15 +579,41 @@ window.chatbaseConfig = {
                           </Select>
                         </div>
 
-                        <div>
-                          <Label>
-                            {source.type === 'website' && 'Website URL *'}
-                            {source.type === 'files' && 'Upload Files *'}
-                            {source.type === 'text' && 'Training Text *'}
-                            {source.type === 'database' && 'Database Connection *'}
-                          </Label>
-                          
-                          {source.type === 'files' ? (
+                        {source.type === 'website' ? (
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                              <Label>Website Configuration</Label>
+                              <Button 
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setShowWebsiteConfig(index)}
+                              >
+                                <Link className="h-4 w-4 mr-1" />
+                                Configure Links
+                              </Button>
+                            </div>
+                            
+                            {source.websiteConfig && (
+                              <div className="text-sm text-muted-foreground p-2 bg-muted rounded">
+                                {source.websiteConfig.mode === 'crawl' ? (
+                                  <div>
+                                    <p><span className="font-medium">Crawl:</span> {source.websiteConfig.url || 'No URL set'}</p>
+                                    {source.websiteConfig.includePaths && (
+                                      <p><span className="font-medium">Include:</span> {source.websiteConfig.includePaths}</p>
+                                    )}
+                                    {source.websiteConfig.excludePaths && (
+                                      <p><span className="font-medium">Exclude:</span> {source.websiteConfig.excludePaths}</p>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <p><span className="font-medium">Scrape:</span> {source.websiteConfig.url || 'No URL set'}</p>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        ) : source.type === 'files' ? (
+                          <div>
+                            <Label>Upload Files *</Label>
                             <div className="space-y-4">
                               <div className="border-2 border-dashed border-muted rounded-lg p-6 text-center">
                                 <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
@@ -569,19 +648,23 @@ window.chatbaseConfig = {
                                 </div>
                               )}
                             </div>
-                          ) : (
+                          </div>
+                        ) : (
+                          <div>
+                            <Label>
+                              {source.type === 'text' ? 'Training Text *' : 'Database Connection *'}
+                            </Label>
                             <Textarea
                               value={source.config as string}
                               onChange={(e) => updateDataSourceConfig(index, e.target.value)}
                               placeholder={
-                                source.type === 'website' ? 'https://your-website.com' :
-                                source.type === 'text' ? 'Enter your training text here...' :
+                                source.type === 'text' ? 'Enter your training text here...' : 
                                 'Database connection string'
                               }
                               rows={3}
                             />
-                          )}
-                        </div>
+                          </div>
+                        )}
                       </div>
                     </Card>
                   ))}
@@ -698,6 +781,105 @@ window.chatbaseConfig = {
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* Website Configuration Modal */}
+      {showWebsiteConfig !== null && (
+        <Dialog open={showWebsiteConfig !== null} onOpenChange={() => setShowWebsiteConfig(null)}>
+          <DialogContent className="sm:max-w-[625px]">
+            <DialogHeader>
+              <DialogTitle>Website Configuration</DialogTitle>
+              <DialogDescription>
+                Configure how to extract content from websites
+              </DialogDescription>
+            </DialogHeader>
+            
+            <Tabs defaultValue="crawl" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="crawl">
+                  <LayoutGrid className="h-4 w-4 mr-2" />
+                  Crawl URL
+                </TabsTrigger>
+                <TabsTrigger value="scrape">
+                  <Link className="h-4 w-4 mr-2" />
+                  Scrape URL
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="crawl" className="space-y-4 pt-4">
+                <div>
+                  <Label htmlFor="crawlUrl">Website URL *</Label>
+                  <Input
+                    id="crawlUrl"
+                    value={dataSources[showWebsiteConfig].websiteConfig?.url || ''}
+                    onChange={(e) => updateWebsiteConfig(showWebsiteConfig, { url: e.target.value })}
+                    placeholder="https://your-website.com"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="includePaths">Include Paths (optional)</Label>
+                  <Input
+                    id="includePaths"
+                    value={dataSources[showWebsiteConfig].websiteConfig?.includePaths || ''}
+                    onChange={(e) => updateWebsiteConfig(showWebsiteConfig, { includePaths: e.target.value })}
+                    placeholder="/blog/**, /help/**"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Comma-separated paths to include. Use ** for wildcard matching.
+                  </p>
+                </div>
+                
+                <div>
+                  <Label htmlFor="excludePaths">Exclude Paths (optional)</Label>
+                  <Input
+                    id="excludePaths"
+                    value={dataSources[showWebsiteConfig].websiteConfig?.excludePaths || ''}
+                    onChange={(e) => updateWebsiteConfig(showWebsiteConfig, { excludePaths: e.target.value })}
+                    placeholder="/admin/**, /private/**"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Comma-separated paths to exclude. Use ** for wildcard matching.
+                  </p>
+                </div>
+                
+                <div className="flex justify-end pt-2">
+                  <Button 
+                    onClick={() => {
+                      updateWebsiteConfig(showWebsiteConfig, { mode: 'crawl' });
+                      setShowWebsiteConfig(null);
+                    }}
+                  >
+                    Save Configuration
+                  </Button>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="scrape" className="space-y-4 pt-4">
+                <div>
+                  <Label htmlFor="scrapeUrl">Page URL *</Label>
+                  <Input
+                    id="scrapeUrl"
+                    value={dataSources[showWebsiteConfig].websiteConfig?.url || ''}
+                    onChange={(e) => updateWebsiteConfig(showWebsiteConfig, { url: e.target.value })}
+                    placeholder="https://your-website.com/specific-page"
+                  />
+                </div>
+                
+                <div className="flex justify-end pt-2">
+                  <Button 
+                    onClick={() => {
+                      updateWebsiteConfig(showWebsiteConfig, { mode: 'scrape' });
+                      setShowWebsiteConfig(null);
+                    }}
+                  >
+                    Save Configuration
+                  </Button>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Search */}
       <div className="flex gap-4">
