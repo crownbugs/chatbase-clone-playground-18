@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import AgentBuilder from "@/components/AgentBuilder";
+import AgentsManager from "@/components/AgentsManager";
 import AnalyticsDashboard from "@/components/AnalyticsDashboard";
 import IntegrationHub from "@/components/IntegrationHub";
 import ChatWidget from "@/components/ChatWidget";
@@ -50,7 +50,7 @@ const Dashboard = () => {
       case 'integrations':
         return <IntegrationHub />;
       case 'agents':
-        return <AgentBuilder />;
+        return <AgentsManager />;
       default:
         return <DashboardOverview agents={agents} />;
     }

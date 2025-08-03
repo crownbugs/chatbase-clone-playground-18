@@ -290,7 +290,7 @@ window.chatbaseConfig = {
             type: source.type,
             content: source.type === 'text' ? source.config as string : null,
             url: source.type === 'website' ? source.websiteConfig?.url : null,
-            config: source.type === 'website' ? JSON.stringify(source.websiteConfig) : null
+            metadata: source.type === 'website' ? source.websiteConfig : null
           })
           .select()
           .single();

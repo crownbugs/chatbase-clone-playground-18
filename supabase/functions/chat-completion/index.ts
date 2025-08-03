@@ -87,23 +87,46 @@ serve(async (req) => {
         content: message,
       });
 
-    // Get relevant knowledge from RAG
-    const { data: knowledgeBases } = await supabaseClient
-      .from('knowledge_bases')
-      .select('*')
-      .eq('agent_id', agentId)
-      .eq('processed', true);
+    // Get relevant knowledge from RAG using embeddings
+    const { data: embeddings } = await supabaseClient
+      .from('embeddings')
+      .select(`
+        content,
+        knowledge_bases!inner(agent_id)
+      `)
+      .eq('knowledge_bases.agent_id', agentId)
+      .textSearch('content', message.split(' ').join(' | '))
+      .limit(5);
 
     let context = '';
-    if (knowledgeBases && knowledgeBases.length > 0) {
-      const relevantContent = knowledgeBases
-        .filter(kb => kb.content && kb.content.toLowerCase().includes(message.toLowerCase()))
-        .map(kb => kb.content)
-        .slice(0, 3)
+    if (embeddings && embeddings.length > 0) {
+      const relevantContent = embeddings
+        .map(emb => emb.content)
         .join('\n\n');
 
       if (relevantContent) {
         context = `\n\nRelevant information from knowledge base:\n${relevantContent}`;
+      }
+    }
+
+    // Fallback to knowledge_bases if no embeddings found
+    if (!context) {
+      const { data: knowledgeBases } = await supabaseClient
+        .from('knowledge_bases')
+        .select('content')
+        .eq('agent_id', agentId)
+        .eq('processed', true);
+
+      if (knowledgeBases && knowledgeBases.length > 0) {
+        const relevantContent = knowledgeBases
+          .filter(kb => kb.content && kb.content.toLowerCase().includes(message.toLowerCase()))
+          .map(kb => kb.content)
+          .slice(0, 3)
+          .join('\n\n');
+
+        if (relevantContent) {
+          context = `\n\nRelevant information from knowledge base:\n${relevantContent}`;
+        }
       }
     }
 
