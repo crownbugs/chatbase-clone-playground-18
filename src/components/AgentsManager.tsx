@@ -955,7 +955,7 @@ window.chatbaseConfig = {
                 <div>
                   <Label>Page URLs *</Label>
                   <div className="space-y-2 mb-4">
-                    {dataSources[showWebsiteConfig].websiteConfig?.urls.map((url, urlIndex) => (
+                    {dataSources[showWebsiteConfig]?.websiteConfig?.urls?.map((url, urlIndex) => (
                       <div key={urlIndex} className="flex items-center gap-2">
                         <Input
                           value={url}
@@ -1004,7 +1004,7 @@ window.chatbaseConfig = {
             </Tabs>
           </DialogContent>
         </Dialog>
-      </div>
+      )}
 
       {/* Search */}
       <div className="flex gap-4">
@@ -1088,7 +1088,7 @@ window.chatbaseConfig = {
                     size="sm"
                     onClick={() => copyEmbedCode(agent.embed_code || '')}
                   >
-                    <Copy className="w-4 w-4" />
+                    <Copy className="w-4 h-4" />
                   </Button>
                   
                   <Button
