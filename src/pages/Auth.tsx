@@ -68,10 +68,10 @@ const Auth = () => {
         <div className="flex flex-col items-center justify-center">
           <Logo 
             showText={true} 
-            size="md"
+            size="lg" // Use large size to match previous dimensions
             className="flex flex-col items-center justify-center"
           />
-          <p className="text-muted-foreground mt-2 text-center">
+          <p className="text-muted-foreground mt-4 text-center text-lg">
             Build AI chatbots for your website
           </p>
         </div>
@@ -120,53 +120,53 @@ const Auth = () => {
                 <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  minLength={6}
-                />
-              </div>
-              
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {mode === 'signin' ? 'Sign In' : 'Create Account'}
-              </Button>
-            </form>
-            
-            <div className="text-center text-sm mt-4">
-              {mode === 'signin' ? (
-                <>
-                  Don't have an account?{' '}
-                  <Button variant="link" onClick={() => setMode('signup')} className="p-0 h-auto">
-                    Sign up
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="password">Password</Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      minLength={6}
+                    />
+                  </div>
+                  
+                  <Button type="submit" className="w-full" disabled={loading}>
+                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {mode === 'signin' ? 'Sign In' : 'Create Account'}
                   </Button>
-                </>
-              ) : (
-                <>
-                  Already have an account?{' '}
-                  <Button variant="link" onClick={() => setMode('signin')} className="p-0 h-auto">
-                    Sign in
-                  </Button>
-                </>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
-};
-
-export default Auth;
+                </form>
+                
+                <div className="text-center text-sm mt-4">
+                  {mode === 'signin' ? (
+                    <>
+                      Don't have an account?{' '}
+                      <Button variant="link" onClick={() => setMode('signup')} className="p-0 h-auto">
+                        Sign up
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      Already have an account?{' '}
+                      <Button variant="link" onClick={() => setMode('signin')} className="p-0 h-auto">
+                        Sign in
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      );
+    };
+    
+    export default Auth;
