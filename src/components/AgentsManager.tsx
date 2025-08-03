@@ -120,19 +120,8 @@ const AgentsManager = () => {
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>, index: number) => {
     const files = Array.from(event.target.files || []);
-    // Append new files to existing ones instead of replacing
-    const existingFiles = Array.isArray(dataSources[index].config) ? dataSources[index].config as File[] : [];
-    const allFiles = [...existingFiles, ...files];
     const updatedSources = [...dataSources];
-    updatedSources[index].config = allFiles;
-    setDataSources(updatedSources);
-  };
-
-  const removeFile = (sourceIndex: number, fileIndex: number) => {
-    const files = dataSources[sourceIndex].config as File[];
-    const updatedFiles = files.filter((_, index) => index !== fileIndex);
-    const updatedSources = [...dataSources];
-    updatedSources[sourceIndex].config = updatedFiles;
+    updatedSources[index].config = files;
     setDataSources(updatedSources);
   };
 
@@ -301,7 +290,7 @@ window.chatbaseConfig = {
             type: source.type,
             content: source.type === 'text' ? source.config as string : null,
             url: source.type === 'website' ? source.websiteConfig?.url : null,
-            metadata: source.type === 'website' ? source.websiteConfig : null
+            config: source.type === 'website' ? JSON.stringify(source.websiteConfig) : null
           })
           .select()
           .single();
@@ -745,22 +734,12 @@ window.chatbaseConfig = {
                               {Array.isArray(source.config) && source.config.length > 0 && (
                                 <div className="space-y-2">
                                   <p className="text-sm font-medium">Selected files:</p>
-                              {source.config.map((file, fileIndex) => (
+                                  {source.config.map((file, fileIndex) => (
                                     <div key={fileIndex} className="flex items-center justify-between p-2 bg-muted rounded">
-                                      <div className="flex-1">
-                                        <span className="text-sm">{file.name}</span>
-                                        <p className="text-xs text-muted-foreground">
-                                          {(file.size / 1024).toFixed(1)} KB
-                                        </p>
-                                      </div>
-                                      <Button 
-                                        variant="ghost" 
-                                        size="icon" 
-                                        className="h-6 w-6"
-                                        onClick={() => removeFile(index, fileIndex)}
-                                      >
-                                        <X className="h-4 w-4" />
-                                      </Button>
+                                      <span className="text-sm">{file.name}</span>
+                                      <span className="text-xs text-muted-foreground">
+                                        {(file.size / 1024).toFixed(1)} KB
+                                      </span>
                                     </div>
                                   ))}
                                 </div>
