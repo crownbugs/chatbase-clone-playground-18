@@ -66,14 +66,14 @@ const Auth = () => {
       <div className="w-full max-w-md">
         {/* Logo with centered layout */}
         <div className="flex flex-col items-center justify-center mb-8">
-          {/* HUGE Logo */}
+          {/* Logo */}
           <Logo 
             showText={false} 
-            size="xl" // Using the new xl size (...)
+            size="lg" 
           />
           
-          {/* HUGE Rebur Text */}
-          <h1 className="text-5xl font-bold tracking-tighter mt-4">Rebur</h1>
+          {/* Rebur Text */}
+          <h1 className="text-2xl font-bold tracking-tighter mt-4">Rebur</h1>
           
           {/* Description */}
           <p className="text-muted-foreground text-center mt-2">
