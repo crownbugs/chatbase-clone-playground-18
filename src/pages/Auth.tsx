@@ -69,11 +69,11 @@ const Auth = () => {
           {/* HUGE Logo */}
           <Logo 
             showText={false} 
-            size="xxl" // Using the new xxl size (192x192px)
+            size="x1" // Using the new xl size (...)
           />
           
           {/* HUGE Rebur Text */}
-          <h1 className="text-7xl font-bold tracking-tighter mt-4">REBUR</h1>
+          <h1 className="text-5xl font-bold tracking-tighter mt-4">Rebur</h1>
           
           {/* Description */}
           <p className="text-muted-foreground text-center mt-2">
