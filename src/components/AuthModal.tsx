@@ -4,8 +4,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { Loader2 } from "lucide-react";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -24,136 +22,83 @@ const AuthModal = ({ isOpen, onClose, mode, onModeChange }: AuthModalProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-
-    try {
-      if (mode === 'signup') {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              full_name: fullName,
-              company: company,
-            }
-          }
-        });
-        
-        if (error) throw error;
-        
-        toast({
-          title: "Success!",
-          description: "Check your email to confirm your account.",
-        });
-        
-        onClose();
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        
-        if (error) throw error;
-        
-        toast({
-          title: "Welcome back!",
-          description: "You've been signed in successfully.",
-        });
-        
-        onClose();
-      }
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+    toast({
+      title: "Coming Soon",
+      description: "Authentication will be available after Supabase setup",
+    });
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>
-            {mode === 'signin' ? 'Sign In' : 'Create Account'}
+            {mode === 'signin' ? 'Sign In' : 'Sign Up'}
           </DialogTitle>
         </DialogHeader>
-        
         <form onSubmit={handleSubmit} className="space-y-4">
           {mode === 'signup' && (
             <>
-              <div>
+              <div className="space-y-2">
                 <Label htmlFor="fullName">Full Name</Label>
                 <Input
                   id="fullName"
                   type="text"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  required
+                  placeholder="Enter your full name"
                 />
               </div>
-              
-              <div>
-                <Label htmlFor="company">Company (optional)</Label>
+              <div className="space-y-2">
+                <Label htmlFor="company">Company (Optional)</Label>
                 <Input
                   id="company"
                   type="text"
                   value={company}
                   onChange={(e) => setCompany(e.target.value)}
+                  placeholder="Enter your company name"
                 />
               </div>
             </>
           )}
-          
-          <div>
+          <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
               id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter your email"
               required
             />
           </div>
-          
-          <div>
+          <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
             <Input
               id="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your password"
               required
-              minLength={6}
             />
           </div>
-          
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {mode === 'signin' ? 'Sign In' : 'Create Account'}
+            {loading ? 'Please wait...' : mode === 'signin' ? 'Sign In' : 'Sign Up'}
           </Button>
+          <div className="text-center">
+            <button
+              type="button"
+              onClick={() => onModeChange(mode === 'signin' ? 'signup' : 'signin')}
+              className="text-sm text-primary hover:underline"
+            >
+              {mode === 'signin' 
+                ? "Don't have an account? Sign up" 
+                : "Already have an account? Sign in"
+              }
+            </button>
+          </div>
         </form>
-        
-        <div className="text-center text-sm">
-          {mode === 'signin' ? (
-            <>
-              Don't have an account?{' '}
-              <Button variant="link" onClick={() => onModeChange('signup')} className="p-0">
-                Sign up
-              </Button>
-            </>
-          ) : (
-            <>
-              Already have an account?{' '}
-              <Button variant="link" onClick={() => onModeChange('signin')} className="p-0">
-                Sign in
-              </Button>
-            </>
-          )}
-        </div>
       </DialogContent>
     </Dialog>
   );
