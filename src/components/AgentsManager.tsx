@@ -34,7 +34,7 @@ interface Agent {
 }
 
 interface DataSource {
-  type: 'website' | 'files' | 'text' | 'database';
+  type: 'website' | 'document' | 'text' | 'database';
   config: string | File[];
   websiteConfig?: {
     mode: 'crawl' | 'scrape';
@@ -85,7 +85,7 @@ const AgentsManager = () => {
   // Data source options for knowledge base
   const dataSourceOptions = [
     { value: 'website', label: 'Website URL', icon: Globe },
-    { value: 'files', label: 'Upload Files', icon: Upload },
+    { value: 'document', label: 'Upload Files', icon: Upload },
     { value: 'text', label: 'Text Input', icon: FileText },
     { value: 'database', label: 'Database', icon: Database }
   ];
@@ -157,12 +157,12 @@ const AgentsManager = () => {
     setDataSources(updatedSources);
   };
 
-  const updateDataSourceType = (index: number, type: 'website' | 'files' | 'text' | 'database') => {
+  const updateDataSourceType = (index: number, type: 'website' | 'document' | 'text' | 'database') => {
     const updatedSources = [...dataSources];
     updatedSources[index].type = type;
     
     // Reset config when type changes
-    if (type === 'files') {
+    if (type === 'document') {
       updatedSources[index].config = [];
     } else {
       updatedSources[index].config = '';
@@ -298,7 +298,7 @@ window.chatbaseConfig = {
           .insert({
             agent_id: agent.id,
             name: `${newAgent.name} Knowledge Base - ${source.type}`,
-            type: source.type,
+            type: source.type === 'document' ? 'files' : source.type,
             content: source.type === 'text' ? source.config as string : null,
             url: source.type === 'website' ? source.websiteConfig?.url : null,
             metadata: source.type === 'website' ? source.websiteConfig : null
@@ -351,7 +351,7 @@ window.chatbaseConfig = {
               }
             }
           }
-        } else if (source.type === 'files' && Array.isArray(source.config) && source.config.length > 0) {
+        } else if (source.type === 'document' && Array.isArray(source.config) && source.config.length > 0) {
           // Upload and process files
           for (const file of source.config as File[]) {
             const fileName = `${Date.now()}-${file.name}`;
@@ -659,7 +659,7 @@ window.chatbaseConfig = {
                           <Label>Source Type *</Label>
                           <Select
                             value={source.type}
-                            onValueChange={(value: 'website' | 'files' | 'text' | 'database') => 
+                            onValueChange={(value: 'website' | 'document' | 'text' | 'database') => 
                               updateDataSourceType(index, value)
                             }
                           >
@@ -719,7 +719,7 @@ window.chatbaseConfig = {
                               </div>
                             )}
                           </div>
-                        ) : source.type === 'files' ? (
+                        ) : source.type === 'document' ? (
                           <div>
                             <Label>Upload Files *</Label>
                             <div className="space-y-4">

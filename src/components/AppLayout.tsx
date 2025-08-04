@@ -15,7 +15,6 @@ const AppLayout = () => {
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [showChatWidget, setShowChatWidget] = useState(false);
   const [activeAgent, setActiveAgent] = useState<string | null>(null);
-  const [navbarCollapsed, setNavbarCollapsed] = useState(false);
   const { user, loading } = useAuth();
   const navigate = useNavigate();
 
@@ -95,13 +94,9 @@ const AppLayout = () => {
       <Navbar 
         onNavigate={handleNavigate} 
         currentPage={currentPage} 
-        collapsed={navbarCollapsed}
-        onToggleCollapse={() => setNavbarCollapsed(!navbarCollapsed)}
       />
       
-      <main className={`container mx-auto px-4 transition-all duration-300 ${
-        navbarCollapsed ? 'py-2' : 'py-6'
-      }`}>
+      <main className="container mx-auto px-4 py-6">
         {renderCurrentPage()}
       </main>
 
