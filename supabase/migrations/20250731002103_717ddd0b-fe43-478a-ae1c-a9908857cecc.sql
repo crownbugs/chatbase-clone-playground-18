@@ -29,9 +29,10 @@ CREATE TABLE public.knowledge_bases (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   agent_id UUID REFERENCES public.agents(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
-  type TEXT CHECK (type IN ('website', 'document', 'text')),
+  type TEXT CHECK (type IN ('website', 'document', 'text', 'database')),
   content TEXT,
   url TEXT,
+  config JSONB,
   metadata JSONB DEFAULT '{}',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
