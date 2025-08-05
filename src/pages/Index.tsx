@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { MessageSquare, Bot, Users, BarChart3, Zap, Shield, Globe } from "lucide-react";
+import Logo from "@/components/Logo";
 
 const Index = () => {
   const { user, loading } = useAuth();
@@ -11,7 +12,6 @@ const Index = () => {
 
   useEffect(() => {
     if (!loading && user) {
-      // User is logged in, redirect to app
       navigate('/app');
     }
   }, [user, loading, navigate]);
@@ -28,24 +28,17 @@ const Index = () => {
   }
 
   if (user) {
-    // This shouldn't happen due to the useEffect redirect, but just in case
     navigate('/app');
     return null;
   }
 
-  // Show landing page for non-authenticated users
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <MessageSquare className="w-4 h-4 text-primary-foreground" />
-              </div>
-              <span className="text-xl font-bold">ChatBase Clone</span>
-            </div>
+            <Logo showText={true} showTagline={false} size="sm" />
             
             <div className="flex items-center gap-4">
               <Link to="/auth">
