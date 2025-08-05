@@ -14,7 +14,280 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      agents: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          embed_code: string | null
+          id: string
+          instructions: string | null
+          is_active: boolean | null
+          max_tokens: number | null
+          model: string | null
+          name: string
+          temperature: number | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          embed_code?: string | null
+          id?: string
+          instructions?: string | null
+          is_active?: boolean | null
+          max_tokens?: number | null
+          model?: string | null
+          name: string
+          temperature?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          embed_code?: string | null
+          id?: string
+          instructions?: string | null
+          is_active?: boolean | null
+          max_tokens?: number | null
+          model?: string | null
+          name?: string
+          temperature?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      analytics: {
+        Row: {
+          agent_id: string | null
+          created_at: string | null
+          event_data: Json | null
+          event_type: string
+          id: string
+        }
+        Insert: {
+          agent_id?: string | null
+          created_at?: string | null
+          event_data?: Json | null
+          event_type: string
+          id?: string
+        }
+        Update: {
+          agent_id?: string | null
+          created_at?: string | null
+          event_data?: Json | null
+          event_type?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analytics_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversations: {
+        Row: {
+          agent_id: string | null
+          created_at: string | null
+          id: string
+          lead_captured: boolean | null
+          satisfaction_score: number | null
+          status: string | null
+          updated_at: string | null
+          visitor_email: string | null
+          visitor_id: string | null
+          visitor_name: string | null
+        }
+        Insert: {
+          agent_id?: string | null
+          created_at?: string | null
+          id?: string
+          lead_captured?: boolean | null
+          satisfaction_score?: number | null
+          status?: string | null
+          updated_at?: string | null
+          visitor_email?: string | null
+          visitor_id?: string | null
+          visitor_name?: string | null
+        }
+        Update: {
+          agent_id?: string | null
+          created_at?: string | null
+          id?: string
+          lead_captured?: boolean | null
+          satisfaction_score?: number | null
+          status?: string | null
+          updated_at?: string | null
+          visitor_email?: string | null
+          visitor_id?: string | null
+          visitor_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      embeddings: {
+        Row: {
+          content: string
+          created_at: string | null
+          embedding: string | null
+          id: string
+          knowledge_base_id: string | null
+          metadata: Json | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          embedding?: string | null
+          id?: string
+          knowledge_base_id?: string | null
+          metadata?: Json | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          embedding?: string | null
+          id?: string
+          knowledge_base_id?: string | null
+          metadata?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "embeddings_knowledge_base_id_fkey"
+            columns: ["knowledge_base_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_bases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      knowledge_bases: {
+        Row: {
+          agent_id: string | null
+          content: string | null
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          name: string
+          processed: boolean | null
+          type: string | null
+          updated_at: string | null
+          url: string | null
+        }
+        Insert: {
+          agent_id?: string | null
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          name: string
+          processed?: boolean | null
+          type?: string | null
+          updated_at?: string | null
+          url?: string | null
+        }
+        Update: {
+          agent_id?: string | null
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          name?: string
+          processed?: boolean | null
+          type?: string | null
+          updated_at?: string | null
+          url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_bases_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          content: string
+          conversation_id: string | null
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          type: string
+        }
+        Insert: {
+          content: string
+          conversation_id?: string | null
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          type: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string | null
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          company: string | null
+          created_at: string | null
+          email: string | null
+          full_name: string | null
+          id: string
+          openai_api_key: string | null
+          updated_at: string | null
+          website: string | null
+        }
+        Insert: {
+          company?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id: string
+          openai_api_key?: string | null
+          updated_at?: string | null
+          website?: string | null
+        }
+        Update: {
+          company?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          openai_api_key?: string | null
+          updated_at?: string | null
+          website?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
