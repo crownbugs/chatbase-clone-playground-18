@@ -4,11 +4,17 @@ import { cn } from "@/lib/utils";
 
 interface LogoProps {
   showText?: boolean;
+  showTagline?: boolean; // New prop to control tagline visibility
   size?: 'sm' | 'md' | 'lg';
   className?: string;
 }
 
-const Logo: React.FC<LogoProps> = ({ showText = true, size = 'md', className }) => {
+const Logo: React.FC<LogoProps> = ({ 
+  showText = true, 
+  showTagline = true, // Default to showing tagline
+  size = 'md', 
+  className 
+}) => {
   const sizes = {
     sm: 'h-8 w-8',
     md: 'h-10 w-10',
@@ -40,7 +46,9 @@ const Logo: React.FC<LogoProps> = ({ showText = true, size = 'md', className }) 
       {showText && (
         <div className="flex flex-col">
           <span className={`font-bold tracking-tight ${textSizes[size]} truncate`}>Rebur</span>
-          <span className="text-xs text-neutral-500 -mt-1 truncate max-w-[120px]">AI Agents</span>
+          {showTagline && (
+            <span className="text-xs text-neutral-500 -mt-1 truncate max-w-[120px]">AI Agents</span>
+          )}
         </div>
       )}
     </Link>
