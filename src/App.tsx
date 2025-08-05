@@ -5,6 +5,12 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import AppLayout from "@/components/AppLayout";
+import MainDashboard from "@/components/MainDashboard";
+import AgentsManager from "@/components/AgentsManager";
+import AnalyticsDashboard from "@/components/AnalyticsDashboard";
+import IntegrationHub from "@/components/IntegrationHub";
+import Settings from "@/components/Settings";
+import Index from "@/pages/Index";
 import Auth from "@/pages/Auth";
 import Chat from "@/pages/Chat";
 import NotFound from "./pages/NotFound";
@@ -19,7 +25,14 @@ const App = () => (
       <AuthProvider>
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<AppLayout />} />
+            <Route path="/" element={<Index />} />
+            <Route path="/app" element={<AppLayout />}>
+              <Route index element={<MainDashboard />} />
+              <Route path="agents" element={<AgentsManager />} />
+              <Route path="analytics" element={<AnalyticsDashboard />} />
+              <Route path="integrations" element={<IntegrationHub />} />
+              <Route path="settings" element={<Settings />} />
+            </Route>
             <Route path="/auth" element={<Auth />} />
             <Route path="/chat/:chatbotId" element={<Chat />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

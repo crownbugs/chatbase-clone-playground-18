@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -19,13 +20,41 @@ const AuthModal = ({ isOpen, onClose, mode, onModeChange }: AuthModalProps) => {
   const [company, setCompany] = useState('');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { signIn, signUp } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: "Coming Soon",
-      description: "Authentication will be available after Supabase setup",
-    });
+    setLoading(true);
+
+    try {
+      if (mode === 'signup') {
+        const { error } = await signUp(email, password, fullName, company);
+        if (error) throw error;
+        
+        toast({
+          title: "Success!",
+          description: "Please check your email to verify your account.",
+        });
+      } else {
+        const { error } = await signIn(email, password);
+        if (error) throw error;
+        
+        toast({
+          title: "Welcome back!",
+          description: "You've been signed in successfully.",
+        });
+      }
+      
+      onClose();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Something went wrong",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

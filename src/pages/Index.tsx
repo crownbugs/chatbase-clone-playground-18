@@ -4,7 +4,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { MessageSquare, Bot, Users, BarChart3, Zap, Shield, Globe } from "lucide-react";
-import AppLayout from "@/components/AppLayout";
 
 const Index = () => {
   const { user, loading } = useAuth();
@@ -12,8 +11,8 @@ const Index = () => {
 
   useEffect(() => {
     if (!loading && user) {
-      // User is logged in, show the app
-      return;
+      // User is logged in, redirect to app
+      navigate('/app');
     }
   }, [user, loading, navigate]);
 
@@ -29,7 +28,9 @@ const Index = () => {
   }
 
   if (user) {
-    return <AppLayout />;
+    // This shouldn't happen due to the useEffect redirect, but just in case
+    navigate('/app');
+    return null;
   }
 
   // Show landing page for non-authenticated users
